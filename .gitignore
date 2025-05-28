@@ -47,6 +47,7 @@ pythonenv*
 .project
 .pydevproject
 .settings
+.cursorignore
 
 # Test configuration and artifacts
 tests/config.json
