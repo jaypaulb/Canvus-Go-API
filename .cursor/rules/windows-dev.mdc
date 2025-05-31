@@ -3,3 +3,9 @@ description:
 globs:
 alwaysApply: false
 ---
+# Windows Development Environment Rule
+
+- All development is performed on Windows.
+- The terminal is PowerShell. All commands, scripts, and documentation must be compatible with PowerShell.
+- Do not use Linux commands, shell syntax, or make Linux-specific assumptions.
+- Validate all file paths and scripts for Windows compatibility.

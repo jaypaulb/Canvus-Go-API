@@ -111,4 +111,4 @@ This table summarizes all Canvus API endpoints, with resource, method, path, key
 
 ---
 
-For a structured list of all endpoints, see [Canvus_API_Endpoint_List.md](Canvus_API_Endpoint_List.md) 
+For a structured list of all endpoints, see [Canvus_API_Endpoint_List.md](Canvus_API_Endpoint_List.md)

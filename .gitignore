@@ -68,4 +68,28 @@ cover/
 *.log
 *.local
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Go
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build output
+*.test
+*.out
+
+# Output of the go coverage tool
+coverage.out
+
+# Go workspace file
+go.work
+
+# Dependency directories (vendor)
+vendor/
+
+# Go module files (optional, if you want to ignore local changes)
+# go.sum 
