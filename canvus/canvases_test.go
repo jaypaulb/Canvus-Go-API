@@ -178,12 +178,17 @@ func TestLive_CanvasUpdateAndCopy(t *testing.T) {
 
 	// Update the canvas name
 	newName := uniqueName("RenamedCanvasSDK_Auto")
-	updated, err := client.UpdateCanvas(ctx, canvas.ID, UpdateCanvasRequest{Name: newName})
+	updateReq := UpdateCanvasRequest{Name: newName}
+	payload, _ := json.Marshal(updateReq)
+	t.Logf("PATCH payload: %s", string(payload))
+	updated, err := client.UpdateCanvas(ctx, canvas.ID, updateReq)
 	if err != nil {
 		t.Fatalf("UpdateCanvas failed: %v", err)
 	}
+	resp, _ := json.Marshal(updated)
+	t.Logf("Server response: %s", string(resp))
 	if updated.Name != newName {
-		t.Logf("UpdateCanvas: server returned name = %q, expected = %q. This may be due to server-side naming policy.", updated.Name, newName)
+		t.Errorf("UpdateCanvas name = %q, want %q", updated.Name, newName)
 	}
 
 	// Create a folder for the copy

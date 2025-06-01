@@ -69,8 +69,8 @@ func (c *Client) CreateCanvas(ctx context.Context, req CreateCanvasRequest) (Can
 
 // UpdateCanvasRequest represents the payload for updating a canvas.
 type UpdateCanvasRequest struct {
-	Name string
-	Mode string
+	Name string `json:"name,omitempty"`
+	Mode string `json:"mode,omitempty"`
 	// ... other fields
 }
 

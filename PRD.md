@@ -58,6 +58,9 @@
 - Clear error messages and logging.
 - Consistent, idiomatic Go API design.
 
+## API/SDK Design Notes
+- All JSON field names sent to the Canvus API must be lowercase (e.g., 'name', 'mode'), matching the API's requirements. This is critical for PATCH/POST requests to work as expected.
+
 ---
 
 ## 4. Non-Functional Requirements

@@ -17,6 +17,7 @@ This document is the authoritative project plan. **Update this file with every n
 - [x] Set up standard branching and commit practices
 - [x] Confirm Windows/PowerShell as the development environment
 - [x] Add `.gitignore` for Go and project-specific files
+- [x] Confirmed: All JSON field names in requests must be lowercase to match the Canvus API. This is required for PATCH/POST to work (e.g., canvas renaming).
 
 **2024-06-10 Summary:**
 
