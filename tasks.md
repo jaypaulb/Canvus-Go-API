@@ -29,14 +29,12 @@ This document is the authoritative project plan. **Update this file with every n
 
 - [x] Collect and review the official MT Canvus Server (MCS) REST API documentation/spec
 - [x] List all available API endpoints and their parameters
-- [ ] Identify required abstractions/utilities to improve developer experience (e.g., batching, streaming, error handling)
-- [ ] Map API endpoints to planned SDK features and abstractions
-- [ ] Document findings and update the PRD if needed
+- [x] Identify required abstractions/utilities to improve developer experience (see [Abstractions.md](./Abstractions.md))
+- [x] Map API endpoints to planned SDK features and abstractions (see [Abstractions.md](./Abstractions.md))
+- [x] Document findings and update the PRD if needed (see [PRD.md](./PRD.md))
 
-**2024-06-10 Summary:**
-- Collected and reviewed the official Canvus API documentation in `Canvus API Docs/`.
-- Created a complete, explicit, and fully enumerated list of all API endpoints in `Canvus_API_Endpoint_List.md`.
-- Created a comprehensive markdown table of all endpoints in `Canvus_API_Endpoint_Table.md`.
+**2024-06-13 Summary:**
+- Completed identification, mapping, and documentation of required SDK abstractions and utilities. See [Abstractions.md](./Abstractions.md) for details and [PRD.md](./PRD.md) for cross-references.
 
 ### 3. API Coverage Analysis
 
@@ -45,21 +43,39 @@ This document is the authoritative project plan. **Update this file with every n
 ### 4. Go API Library Expansion
 
 For each missing endpoint/feature:
-
 - [ ] Define Go method signature and data structures
 - [ ] Implement the method
 - [ ] Add error handling and authentication
 - [ ] Write unit tests
 - [ ] Update documentation
 
-**2024-06-11 Progress Update:**
-- Completed a comprehensive mapping of all API endpoints to planned Go SDK method signatures in `Canvus_API_Endpoint_Table.md`.
-- Scaffolded the SDK directory structure and created initial Go files for each resource and shared logic.
-- Implemented the core `Client` struct and constructor in `client.go`.
-- Stubbed out key types for all major resources in `types.go`.
-- Added idiomatic error handling in `errors.go`.
-- Defined option structs for pagination, filtering, and subscription in `options.go`.
-- Stubbed all Canvas-related methods in `canvases.go` with GoDoc comments and placeholder logic.
+#### Endpoint Implementation & Testing Order (2024-06-13)
+
+1. **System Management Endpoints**
+    - [ ] Users: implement and test all actions
+    - [ ] Access Tokens: implement and test all actions
+    - [ ] Groups: implement and test all actions
+    - [ ] Canvas Folders: implement and test all actions
+    - [ ] Server Config: implement and test all actions
+    - [ ] License: implement (do not test activation)
+    - [ ] Audit Log: implement and test all actions
+    - [ ] Server Info: implement and test all actions
+2. **Canvas Endpoints**
+    - [ ] Implement and test all Canvas actions (CRUD, move, copy, permissions, etc.)
+3. **Client & Workspace Endpoints**
+    - [ ] Implement and test all Client actions
+    - [ ] Implement and test all Workspace actions
+    - [ ] Implement logic to launch MT-Canvus-Client with canvas URL for integration tests
+    - [ ] Implement logic to verify client connection and workspace state
+4. **Widget & Asset Endpoints**
+    - [ ] Implement and test all Widget actions (Notes, Anchors, VideoInputs, VideoOutputs, Color Presets, etc.)
+    - [ ] Implement and test all Asset actions (Images, Videos, PDFs, Uploads, Connectors, Backgrounds, MipMaps, Assets, etc.)
+    - [ ] Implement Parenting (patching parent ID) functions (do not test due to known bug)
+    - [ ] Implement and test all read-only endpoints (Widgets, Annotations)
+
+#### Testing & Cleanup Policy
+- [ ] All tests must clean up (permanently delete) resources they create, even on failure. Moving to trash is not sufficient.
+- [ ] Each test must use unique resource names/IDs to avoid collisions and ensure safe cleanup.
 
 ### Required Abstractions/Utilities
 - **Authentication:** API key (from env/config), secure handling

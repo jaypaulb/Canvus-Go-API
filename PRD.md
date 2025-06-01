@@ -34,6 +34,8 @@
   - User and token management
   - Client and workspace operations
   - Server info/config endpoints
+  - Asset management (images, videos, PDFs, uploads, backgrounds, mipmaps, etc.)
+  - Parenting (patching parent ID) must be implemented but is not to be tested due to a known server bug.
 - All request/response models must be idiomatic Go structs, with proper error handling.
 
 ### 3.2. SDK Features
@@ -57,6 +59,28 @@
 - Windows/PowerShell compatibility for all scripts and commands.
 - Clear error messages and logging.
 - Consistent, idiomatic Go API design.
+
+### 3.4. Endpoint Implementation & Testing Order
+
+The following order must be followed for endpoint implementation and testing, to ensure safe, isolated, and reliable test environments:
+
+1. **System Management Endpoints**: Users, Access Tokens, Groups, Canvas Folders, Server Config, License (no activation tests), Audit Log, Server Info
+2. **Canvas Endpoints**: All canvas actions (CRUD, move, copy, permissions, etc.)
+3. **Client & Workspace Endpoints**: All client and workspace actions, including launching the MT-Canvus-Client with a canvas URL and verifying client/workspace state
+4. **Widget & Asset Endpoints**: All widget and asset actions, in dependency order (simple elements first, then those requiring files or references, then read-only endpoints)
+5. **Parenting**: Implement but do not test parenting (patching parent ID)
+
+### 3.5. Subscription & Buffering Requirements
+
+- For endpoints supporting subscriptions (with `?subscription`), the SDK must:
+  - Support initial GET and real-time update streaming (one JSON per line, CR as keep-alive)
+  - Provide a function to filter updates for specific elements
+  - Provide a buffered subscription handler: only emit updates after a configurable period of inactivity, to reduce noise from rapid, sequential updates
+
+### 3.6. Testing & Cleanup Policy
+
+- All tests must clean up (permanently delete) resources they create, even on failure. Moving to trash is not sufficient.
+- Each test must use unique resource names/IDs to avoid collisions and ensure safe cleanup.
 
 ## API/SDK Design Notes
 - All JSON field names sent to the Canvus API must be lowercase (e.g., 'name', 'mode'), matching the API's requirements. This is critical for PATCH/POST requests to work as expected.
@@ -124,3 +148,13 @@
   - Use `GORM` or `sqlc` for ORM/database interaction if required
   - Follow all conventions in @10-golang-coding-standards.mdc
 - **Release cadence:** SDK will be updated twice a year, aligned with MT Canvus releases
+
+---
+
+## SDK Abstractions & Utilities
+
+See [Abstractions.md](./Abstractions.md) for a detailed description of planned SDK abstractions, utilities, and advanced features.
+
+## MCS API Feature Requests
+
+See [MCS-Feature-Requests.md](./MCS-Feature-Requests.md) for proposed improvements and suggestions for the MCS API.
