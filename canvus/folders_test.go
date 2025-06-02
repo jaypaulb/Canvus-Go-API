@@ -6,36 +6,52 @@ import (
 	"time"
 )
 
+// TestClient is used for all Folder API tests except those requiring admin rights.
+// Only admin operations (user create/delete, unblock, approve, audit-log, licenses) use the admin client.
+// See PRD.md for client type documentation.
+
 func TestFolderLifecycle(t *testing.T) {
 	ctx := context.Background()
-	admin, _, err := getTestAdminClientFromSettings()
+	// Use TestClient for all non-admin tests
+	ts, err := loadTestSettings()
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
+	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+
+	testEmail := "testfolder_" + time.Now().Format("20060102150405") + "@example.com"
+	testName := "testfolder_" + time.Now().Format("150405")
+	testPassword := "TestPassword123!"
+	tc, err := NewTestClient(ctx, admin, ts.APIBaseURL, testEmail, testName, testPassword)
+	if err != nil {
+		t.Fatalf("failed to create TestClient: %v", err)
+	}
+	defer func() { _ = tc.Cleanup(ctx) }()
+	client := tc.Client
 
 	// Create a root test folder for isolation
 	rootFolderName := "testfolder_root_" + time.Now().Format("20060102150405")
-	rootFolder, err := admin.CreateFolder(ctx, CreateFolderRequest{Name: rootFolderName})
+	rootFolder, err := client.CreateFolder(ctx, CreateFolderRequest{Name: rootFolderName})
 	if err != nil {
 		t.Fatalf("failed to create root test folder: %v", err)
 	}
 	// Clean up: delete all children, then the root folder itself
 	defer func() {
-		_ = admin.DeleteFolderContents(ctx, rootFolder.ID)
-		_ = admin.DeleteFolder(ctx, rootFolder.ID)
+		_ = client.DeleteFolderContents(ctx, rootFolder.ID)
+		_ = client.DeleteFolder(ctx, rootFolder.ID)
 	}()
 
 	// Create a folder inside the root test folder
 	folderName := rootFolderName + "_child"
-	folder, err := admin.CreateFolder(ctx, CreateFolderRequest{Name: folderName, ParentID: rootFolder.ID})
+	folder, err := client.CreateFolder(ctx, CreateFolderRequest{Name: folderName, ParentID: rootFolder.ID})
 	if err != nil {
 		t.Fatalf("failed to create folder: %v", err)
 	}
 	// Clean up: delete this folder at the end
-	defer func() { _ = admin.DeleteFolder(ctx, folder.ID) }()
+	defer func() { _ = client.DeleteFolder(ctx, folder.ID) }()
 
 	// List folders and check the new folder is present
-	folders, err := admin.ListFolders(ctx)
+	folders, err := client.ListFolders(ctx)
 	if err != nil {
 		t.Errorf("failed to list folders: %v", err)
 	}
@@ -51,7 +67,7 @@ func TestFolderLifecycle(t *testing.T) {
 	}
 
 	// Get the folder by ID
-	got, err := admin.GetFolder(ctx, folder.ID)
+	got, err := client.GetFolder(ctx, folder.ID)
 	if err != nil {
 		t.Errorf("failed to get folder: %v", err)
 	}
@@ -61,7 +77,7 @@ func TestFolderLifecycle(t *testing.T) {
 
 	// Rename the folder
 	newName := folderName + "_renamed"
-	renamed, err := admin.RenameFolder(ctx, folder.ID, newName)
+	renamed, err := client.RenameFolder(ctx, folder.ID, newName)
 	if err != nil {
 		t.Errorf("failed to rename folder: %v", err)
 	}
@@ -71,14 +87,14 @@ func TestFolderLifecycle(t *testing.T) {
 
 	// Create a subfolder inside the root test folder
 	subName := rootFolderName + "_sub"
-	sub, err := admin.CreateFolder(ctx, CreateFolderRequest{Name: subName, ParentID: rootFolder.ID})
+	sub, err := client.CreateFolder(ctx, CreateFolderRequest{Name: subName, ParentID: rootFolder.ID})
 	if err != nil {
 		t.Fatalf("failed to create subfolder: %v", err)
 	}
-	defer func() { _ = admin.DeleteFolder(ctx, sub.ID) }()
+	defer func() { _ = client.DeleteFolder(ctx, sub.ID) }()
 
 	// Move subfolder to the child folder
-	moved, err := admin.MoveFolder(ctx, sub.ID, folder.ID, "replace")
+	moved, err := client.MoveFolder(ctx, sub.ID, folder.ID, "replace")
 	if err != nil {
 		t.Errorf("failed to move subfolder: %v", err)
 	} else if moved.ParentID != folder.ID {
@@ -86,14 +102,14 @@ func TestFolderLifecycle(t *testing.T) {
 	}
 
 	// Copy folder (copy subfolder into root test folder)
-	copied, err := admin.CopyFolder(ctx, sub.ID, rootFolder.ID, "replace")
+	copied, err := client.CopyFolder(ctx, sub.ID, rootFolder.ID, "replace")
 	if err != nil {
 		t.Errorf("failed to copy folder: %v", err)
 	}
-	defer func() { _ = admin.DeleteFolder(ctx, copied.ID) }()
+	defer func() { _ = client.DeleteFolder(ctx, copied.ID) }()
 
 	// Trash the copied folder
-	trashed, err := admin.TrashFolder(ctx, copied.ID, "trash.1000")
+	trashed, err := client.TrashFolder(ctx, copied.ID, "trash.1000")
 	if err != nil {
 		t.Errorf("failed to trash folder: %v", err)
 	}
@@ -102,18 +118,18 @@ func TestFolderLifecycle(t *testing.T) {
 	}
 
 	// Delete all children of the root test folder (should not error)
-	err = admin.DeleteFolderContents(ctx, rootFolder.ID)
+	err = client.DeleteFolderContents(ctx, rootFolder.ID)
 	if err != nil {
 		t.Errorf("failed to delete folder contents: %v", err)
 	}
 
 	// Permissions: get and set on the root test folder
-	perms, err := admin.GetFolderPermissions(ctx, rootFolder.ID)
+	perms, err := client.GetFolderPermissions(ctx, rootFolder.ID)
 	if err != nil {
 		t.Errorf("failed to get folder permissions: %v", err)
 	}
 	perms.EditorsCanShare = false
-	updated, err := admin.SetFolderPermissions(ctx, rootFolder.ID, *perms)
+	updated, err := client.SetFolderPermissions(ctx, rootFolder.ID, *perms)
 	if err != nil {
 		t.Errorf("failed to set folder permissions: %v", err)
 	}
@@ -124,62 +140,74 @@ func TestFolderLifecycle(t *testing.T) {
 
 func TestFolderInvalidCases(t *testing.T) {
 	ctx := context.Background()
-	admin, _, err := getTestAdminClientFromSettings()
+	// Use TestClient for all non-admin tests
+	ts, err := loadTestSettings()
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
+	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+
+	testEmail := "testfolder_" + time.Now().Format("20060102150405") + "@example.com"
+	testName := "testfolder_" + time.Now().Format("150405")
+	testPassword := "TestPassword123!"
+	tc, err := NewTestClient(ctx, admin, ts.APIBaseURL, testEmail, testName, testPassword)
+	if err != nil {
+		t.Fatalf("failed to create TestClient: %v", err)
+	}
+	defer func() { _ = tc.Cleanup(ctx) }()
+	client := tc.Client
 
 	// Get non-existent folder
-	_, err = admin.GetFolder(ctx, "nonexistent-folder-id")
+	_, err = client.GetFolder(ctx, "nonexistent-folder-id")
 	if err == nil {
 		t.Errorf("expected error for non-existent folder, got nil")
 	}
 
 	// Delete non-existent folder
-	err = admin.DeleteFolder(ctx, "nonexistent-folder-id")
+	err = client.DeleteFolder(ctx, "nonexistent-folder-id")
 	if err == nil {
 		t.Errorf("expected error for deleting non-existent folder, got nil")
 	}
 
 	// Rename non-existent folder
-	_, err = admin.RenameFolder(ctx, "nonexistent-folder-id", "newname")
+	_, err = client.RenameFolder(ctx, "nonexistent-folder-id", "newname")
 	if err == nil {
 		t.Errorf("expected error for renaming non-existent folder, got nil")
 	}
 
 	// Move non-existent folder
-	_, err = admin.MoveFolder(ctx, "nonexistent-folder-id", "", "replace")
+	_, err = client.MoveFolder(ctx, "nonexistent-folder-id", "", "replace")
 	if err == nil {
 		t.Errorf("expected error for moving non-existent folder, got nil")
 	}
 
 	// Copy non-existent folder
-	_, err = admin.CopyFolder(ctx, "nonexistent-folder-id", "", "replace")
+	_, err = client.CopyFolder(ctx, "nonexistent-folder-id", "", "replace")
 	if err == nil {
 		t.Errorf("expected error for copying non-existent folder, got nil")
 	}
 
 	// Trash non-existent folder
-	_, err = admin.TrashFolder(ctx, "nonexistent-folder-id", "trash.1000")
+	_, err = client.TrashFolder(ctx, "nonexistent-folder-id", "trash.1000")
 	if err == nil {
 		t.Errorf("expected error for trashing non-existent folder, got nil")
 	}
 
 	// Delete contents of non-existent folder
-	err = admin.DeleteFolderContents(ctx, "nonexistent-folder-id")
+	err = client.DeleteFolderContents(ctx, "nonexistent-folder-id")
 	if err == nil {
 		t.Errorf("expected error for deleting contents of non-existent folder, got nil")
 	}
 
 	// Get permissions of non-existent folder
-	_, err = admin.GetFolderPermissions(ctx, "nonexistent-folder-id")
+	_, err = client.GetFolderPermissions(ctx, "nonexistent-folder-id")
 	if err == nil {
 		t.Errorf("expected error for getting permissions of non-existent folder, got nil")
 	}
 
 	// Set permissions of non-existent folder
 	perms := FolderPermissions{EditorsCanShare: false}
-	_, err = admin.SetFolderPermissions(ctx, "nonexistent-folder-id", perms)
+	_, err = client.SetFolderPermissions(ctx, "nonexistent-folder-id", perms)
 	if err == nil {
 		t.Errorf("expected error for setting permissions of non-existent folder, got nil")
 	}

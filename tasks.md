@@ -63,7 +63,7 @@ For each missing endpoint/feature:
     - [x] Audit Log: implement and test all actions
     - [x] Server Info: implement and test all actions
 2. **Canvas Endpoints**
-    - [ ] Implement and test all Canvas actions (CRUD, move, copy, permissions, etc.)
+    - [/] Implement and test all Canvas actions (CRUD, move, copy, permissions, etc.)
 3. **Client & Workspace Endpoints**
     - [ ] Implement and test all Client actions
     - [ ] Implement and test all Workspace actions
@@ -230,3 +230,9 @@ The SDK must support three primary client instantiation patterns:
 - Implemented DeleteFolder method in Go SDK.
 - Added integration test for folder creation and deletion.
 - Verified folder is removed from ListFolders after deletion.
+
+**2024-06-15 Progress Update:**
+
+- Expanded `Canvas` struct and added all request/response types for Canvas API.
+- Implemented all Canvas API methods in `canvases.go` (CRUD, move, copy, permissions, preview, demo state, etc.).
+- Next: Add and run comprehensive tests for Canvas lifecycle and error cases in `canvases_test.go`.

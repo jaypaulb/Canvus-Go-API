@@ -2,9 +2,17 @@
 package canvus
 
 type Canvas struct {
-	ID   string
-	Name string
-	// ... other fields
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Access      string `json:"access"`
+	AssetSize   int64  `json:"asset_size"`
+	CreatedAt   string `json:"created_at"`
+	FolderID    string `json:"folder_id"`
+	InTrash     bool   `json:"in_trash"`
+	Mode        string `json:"mode"`
+	ModifiedAt  string `json:"modified_at"`
+	PreviewHash string `json:"preview_hash"`
+	State       string `json:"state"`
 }
 
 type Note struct {
@@ -85,4 +93,42 @@ type Workspace struct {
 // Permissions represents access permissions for a resource.
 type Permissions struct {
 	// ... fields
+}
+
+// CreateCanvasRequest is the payload for creating a canvas.
+type CreateCanvasRequest struct {
+	Name     string `json:"name,omitempty"`
+	FolderID string `json:"folder_id,omitempty"`
+}
+
+// UpdateCanvasRequest is the payload for updating a canvas (rename, mode change).
+type UpdateCanvasRequest struct {
+	Name string `json:"name,omitempty"`
+	Mode string `json:"mode,omitempty"`
+}
+
+// MoveOrCopyCanvasRequest is the payload for moving or copying a canvas.
+type MoveOrCopyCanvasRequest struct {
+	FolderID  string `json:"folder_id"`
+	Conflicts string `json:"conflicts,omitempty"`
+}
+
+// CanvasPermissions represents permission overrides on a canvas.
+type CanvasPermissions struct {
+	EditorsCanShare bool                    `json:"editors_can_share"`
+	Users           []CanvasUserPermission  `json:"users"`
+	Groups          []CanvasGroupPermission `json:"groups"`
+	LinkPermission  string                  `json:"link_permission"`
+}
+
+type CanvasUserPermission struct {
+	ID         int64  `json:"id"`
+	Permission string `json:"permission"`
+	Inherited  bool   `json:"inherited"`
+}
+
+type CanvasGroupPermission struct {
+	ID         int64  `json:"id"`
+	Permission string `json:"permission"`
+	Inherited  bool   `json:"inherited"`
 }

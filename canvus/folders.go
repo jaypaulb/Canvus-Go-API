@@ -119,7 +119,12 @@ func (c *Client) CopyFolder(ctx context.Context, id string, parentID string, con
 }
 
 // TrashFolder moves a folder to the trash folder.
-func (c *Client) TrashFolder(ctx context.Context, id string, trashID string) (*Folder, error) {
+func (c *Client) TrashFolder(ctx context.Context, id string, _ string) (*Folder, error) {
+	userID := c.UserID()
+	if userID == 0 {
+		return nil, fmt.Errorf("TrashFolder: user ID not set; must login first")
+	}
+	trashID := fmt.Sprintf("trash.%d", userID)
 	var folder Folder
 	path := fmt.Sprintf("canvas-folders/%s/move", id)
 	req := MoveOrCopyFolderRequest{ParentID: trashID}

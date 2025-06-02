@@ -64,6 +64,7 @@ type Client struct {
 	BaseURL       string
 	HTTPClient    *http.Client
 	authenticator Authenticator
+	userID        int64 // ID of the authenticated user, if available
 }
 
 // NewClient creates a new Canvus API client.
@@ -150,8 +151,7 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body in
 	return nil
 }
 
-// Login authenticates a user and stores the returned token for future requests.
-// It calls POST /users/login and updates the authenticator on success.
+// Login authenticates a user and stores the returned token and user ID for future requests.
 func (c *Client) Login(ctx context.Context, email, password string) error {
 	loginReq := map[string]string{
 		"email":    email,
@@ -159,6 +159,9 @@ func (c *Client) Login(ctx context.Context, email, password string) error {
 	}
 	var loginResp struct {
 		Token string `json:"token"`
+		User  struct {
+			ID int64 `json:"id"`
+		} `json:"user"`
 	}
 	err := c.doRequest(ctx, http.MethodPost, "users/login", loginReq, &loginResp, nil, false)
 	if err != nil {
@@ -168,6 +171,7 @@ func (c *Client) Login(ctx context.Context, email, password string) error {
 		return errors.New("login: no token returned")
 	}
 	c.authenticator = &TokenAuthenticator{Token: loginResp.Token}
+	c.userID = loginResp.User.ID
 	return nil
 }
 
@@ -187,4 +191,9 @@ func (c *Client) Logout(ctx context.Context) error {
 // Users provides access to user management methods.
 func (c *Client) Users() *Client {
 	return c
+}
+
+// UserID returns the authenticated user's ID, or 0 if not logged in.
+func (c *Client) UserID() int64 {
+	return c.userID
 }

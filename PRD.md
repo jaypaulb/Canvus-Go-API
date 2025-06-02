@@ -112,7 +112,27 @@ This order must be followed for both development and CI test execution to avoid 
 - All tests must clean up (permanently delete) resources they create, even on failure. Moving to trash is not sufficient.
 - Each test must use unique resource names/IDs to avoid collisions and ensure safe cleanup.
 
+### 3.7. User-Specific Resource Handling (NEW)
+
+- After login, the SDK extracts and stores the authenticated user's ID from the /users/login response.
+- The user ID is used to construct user-specific resource IDs, such as:
+  - Trash folder: trash.{userId}
+  - User root folder: {userId}
+- All SDK methods that operate on user-specific folders (e.g., TrashCanvas, TrashFolder) now use this approach for correctness and multi-user safety.
+- This pattern should be used for any future user-specific resource operations.
+
+### 3.8. Client Types and Test Policy (NEW)
+
+- The SDK and tests use three client types:
+  1. **Admin Client**: Uses the API key from settings.json. Only used for admin operations: user create/delete, unblock, approve, audit-log, licenses.
+  2. **TestClient**: Used for all non-admin tests. Creates a temporary user, logs in, and performs all actions as that user. Cleans up after tests.
+  3. **UserClient**: Used for tests that require login as an existing user (not common in standard test flows).
+- All Canvas, Folder, Widget, and Asset tests must use the TestClient, not the admin client.
+- This policy ensures correct permissions, test isolation, and future maintainability.
+- See clients.go for implementation details.
+
 ## API/SDK Design Notes
+
 - All JSON field names sent to the Canvus API must be lowercase (e.g., 'name', 'mode'), matching the API's requirements. This is critical for PATCH/POST requests to work as expected.
 
 ---
@@ -186,15 +206,19 @@ This order must be followed for both development and CI test execution to avoid 
 The Canvus API and SDK support two main authentication flows:
 
 ### 1. Username/Password Login
+
 - Endpoint: `POST /users/login`
 - The client sends an email and password to the endpoint.
 - If password authentication is enabled, the server issues a temporary access token (valid for 24 hours).
 - Example request:
+
   ```json
   POST /users/login
   { "email": "alice@example.com", "password": "BBBB" }
   ```
+
 - Example response:
+
   ```json
   {
     "token": "...",
@@ -203,18 +227,21 @@ The Canvus API and SDK support two main authentication flows:
   ```
 
 ### 2. Access Token
+
 - Endpoint: `POST /access-tokens` (or via Canvus web UI)
 - An access token is created via the API or UI.
 - This token does **not expire** and can be used directly for authentication by including it in the `Private-Token` header.
 - You can also POST an existing token to `/users/login` to validate and prolong its lifetime.
 
 ### 3. Sign Out
+
 - Endpoint: `POST /users/logout`
 - Invalidates the provided access token. If no token is provided in the body, the `Private-Token` header is used.
 
 ### SDK Client Authentication Options
 
 The Go SDK client supports three authentication options:
+
 1. Username/password login (temporary token)
 2. Static access token (long-lived)
 3. Token validation/refresh (prolongs token lifetime)
@@ -253,6 +280,7 @@ The SDK must support three primary client instantiation patterns:
    - No automatic cleanup or user/token creation.
 
 **Notes:**
+
 - The terms "API key" and "PrivateToken" are used interchangeably; all authentication headers use `Private-Token`.
 - Session cleanup for temporary tokens is handled by calling `/users/logout`.
 
