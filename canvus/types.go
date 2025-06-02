@@ -1,6 +1,10 @@
 // Package canvus contains shared types for the Canvus SDK.
 package canvus
 
+import (
+	"time"
+)
+
 type Canvas struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -143,12 +147,14 @@ type SetViewportOptions struct {
 }
 
 type OpenCanvasOptions struct {
-	CanvasID  string
-	ServerID  string
-	UserEmail string
-	CenterX   *float64
-	CenterY   *float64
-	WidgetID  *string
+	CanvasID     string        `json:"canvas_id"`
+	ServerID     string        `json:"server_id,omitempty"`
+	UserEmail    string        `json:"user_email,omitempty"`
+	CenterX      *float64      `json:"center_x,omitempty"`
+	CenterY      *float64      `json:"center_y,omitempty"`
+	WidgetID     *string       `json:"widget_id,omitempty"`
+	PollTimeout  time.Duration `json:"-"`
+	PollInterval time.Duration `json:"-"`
 }
 
 type UpdateWorkspaceRequest struct {

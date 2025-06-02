@@ -67,8 +67,8 @@ For each missing endpoint/feature:
 3. **Client & Workspace Endpoints**
     - [ ] Implement and test all Client actions
     - [ ] Implement and test all Workspace actions
-    - [ ] Implement logic to launch MT-Canvus-Client with canvas URL for integration tests
-    - [ ] Implement logic to verify client connection and workspace state
+    - [ ] Implement logic to launch MT-Canvus-Client with canvas URL for integration tests [ABROGATED: Not part of Go SDK; for integration/E2E testing only. For API tests, ensure a client is active and running. See documentation.]
+    - [ ] Refactor open-canvas code to poll get workspaces and verify canvas ID update (server does not send full response; must check for matching canvas ID)
 4. **Widget & Asset Endpoints**
     - [ ] Implement and test all Widget actions (Notes, Anchors, VideoInputs, VideoOutputs, Color Presets, etc.)
     - [ ] Implement and test all Asset actions (Images, Videos, PDFs, Uploads, Connectors, Backgrounds, MipMaps, Assets, etc.)

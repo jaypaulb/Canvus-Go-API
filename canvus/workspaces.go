@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 )
 
 // WorkspaceWidgetGetter allows getting a widget by ID for workspace viewport logic.
@@ -151,30 +152,39 @@ func (c *Session) OpenCanvasOnWorkspace(ctx context.Context, clientID string, se
 	if opts.UserEmail != "" {
 		payload["user_email"] = opts.UserEmail
 	}
-	// Get workspace before
-	before, err := c.GetWorkspace(ctx, clientID, selector)
-	if err != nil {
-		return err
-	}
 	// Open canvas
 	err = c.doRequest(ctx, "POST", endpoint, payload, nil, nil, false)
 	if err != nil {
 		return fmt.Errorf("OpenCanvasOnWorkspace: %w", err)
 	}
-	// Get workspace after
-	after, err := c.GetWorkspace(ctx, clientID, selector)
-	if err != nil {
-		return err
+
+	// Poll for workspace update (canvas ID change)
+	timeout := 10 * time.Second
+	interval := 200 * time.Millisecond
+	if opts.PollTimeout > 0 {
+		timeout = opts.PollTimeout
 	}
-	if before.CanvasID == after.CanvasID {
-		return errors.New("canvas did not change after open-canvas")
+	if opts.PollInterval > 0 {
+		interval = opts.PollInterval
 	}
+	var ws *Workspace
+	start := time.Now()
+	for {
+		ws, err = c.GetWorkspace(ctx, clientID, selector)
+		if err != nil {
+			return fmt.Errorf("OpenCanvasOnWorkspace: polling GetWorkspace failed: %w", err)
+		}
+		if ws.CanvasID == opts.CanvasID {
+			break
+		}
+		if time.Since(start) > timeout {
+			return fmt.Errorf("OpenCanvasOnWorkspace: timed out waiting for canvas ID %s (last seen: %s)", opts.CanvasID, ws.CanvasID)
+		}
+		time.Sleep(interval)
+	}
+
 	// Optionally set viewport
 	if opts.CenterX != nil && opts.CenterY != nil {
-		ws, err := c.GetWorkspace(ctx, clientID, selector)
-		if err != nil {
-			return err
-		}
 		rect := &Rectangle{
 			X:      *opts.CenterX,
 			Y:      *opts.CenterY,
