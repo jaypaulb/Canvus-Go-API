@@ -69,12 +69,6 @@ type ColorPreset struct {
 	// ... other fields
 }
 
-type Group struct {
-	ID   string
-	Name string
-	// ... other fields
-}
-
 type AuditEvent struct {
 	ID string
 	// ... other fields

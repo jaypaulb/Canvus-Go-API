@@ -52,8 +52,8 @@ For each missing endpoint/feature:
 #### Endpoint Implementation & Testing Order (2024-06-13)
 
 1. **System Management Endpoints**
-    - [ ] Users: implement and test all actions
-    - [ ] Access Tokens: implement and test all actions
+    - [x] Users: implement and test all actions
+    - [x] Access Tokens: implement and test all actions
     - [ ] Groups: implement and test all actions
     - [ ] Canvas Folders: implement and test all actions
     - [ ] Server Config: implement and test all actions
