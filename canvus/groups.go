@@ -37,9 +37,9 @@ type Group struct {
 }
 
 // ListGroups retrieves all groups.
-func (c *Client) ListGroups(ctx context.Context) ([]Group, error) {
+func (s *Session) ListGroups(ctx context.Context) ([]Group, error) {
 	var groups []Group
-	err := c.doRequest(ctx, "GET", "groups", nil, &groups, nil, false)
+	err := s.doRequest(ctx, "GET", "groups", nil, &groups, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("ListGroups: %w", err)
 	}
@@ -47,10 +47,10 @@ func (c *Client) ListGroups(ctx context.Context) ([]Group, error) {
 }
 
 // GetGroup retrieves a single group by ID.
-func (c *Client) GetGroup(ctx context.Context, id int) (*Group, error) {
+func (s *Session) GetGroup(ctx context.Context, id int) (*Group, error) {
 	var group Group
 	path := fmt.Sprintf("groups/%d", id)
-	err := c.doRequest(ctx, "GET", path, nil, &group, nil, false)
+	err := s.doRequest(ctx, "GET", path, nil, &group, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetGroup: %w", err)
 	}
@@ -58,9 +58,9 @@ func (c *Client) GetGroup(ctx context.Context, id int) (*Group, error) {
 }
 
 // CreateGroup creates a new group.
-func (c *Client) CreateGroup(ctx context.Context, req CreateGroupRequest) (*Group, error) {
+func (s *Session) CreateGroup(ctx context.Context, req CreateGroupRequest) (*Group, error) {
 	var group Group
-	err := c.doRequest(ctx, "POST", "groups", req, &group, nil, false)
+	err := s.doRequest(ctx, "POST", "groups", req, &group, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("CreateGroup: %w", err)
 	}
@@ -68,23 +68,23 @@ func (c *Client) CreateGroup(ctx context.Context, req CreateGroupRequest) (*Grou
 }
 
 // DeleteGroup deletes a group by ID.
-func (c *Client) DeleteGroup(ctx context.Context, id int) error {
+func (s *Session) DeleteGroup(ctx context.Context, id int) error {
 	path := fmt.Sprintf("groups/%d", id)
-	return c.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
+	return s.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
 }
 
 // AddUserToGroup adds a user to a group.
-func (c *Client) AddUserToGroup(ctx context.Context, groupID int, userID int) error {
+func (s *Session) AddUserToGroup(ctx context.Context, groupID int, userID int) error {
 	path := fmt.Sprintf("groups/%d/members", groupID)
 	body := AddUserToGroupRequest{ID: userID}
-	return c.doRequest(ctx, "POST", path, body, nil, nil, false)
+	return s.doRequest(ctx, "POST", path, body, nil, nil, false)
 }
 
 // ListGroupMembers lists all users in a group.
-func (c *Client) ListGroupMembers(ctx context.Context, groupID int) ([]GroupMember, error) {
+func (s *Session) ListGroupMembers(ctx context.Context, groupID int) ([]GroupMember, error) {
 	path := fmt.Sprintf("groups/%d/members", groupID)
 	var members []GroupMember
-	err := c.doRequest(ctx, "GET", path, nil, &members, nil, false)
+	err := s.doRequest(ctx, "GET", path, nil, &members, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("ListGroupMembers: %w", err)
 	}
@@ -92,7 +92,7 @@ func (c *Client) ListGroupMembers(ctx context.Context, groupID int) ([]GroupMemb
 }
 
 // RemoveUserFromGroup removes a user from a group.
-func (c *Client) RemoveUserFromGroup(ctx context.Context, groupID int, userID int) error {
+func (s *Session) RemoveUserFromGroup(ctx context.Context, groupID int, userID int) error {
 	path := fmt.Sprintf("groups/%d/members/%d", groupID, userID)
-	return c.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
+	return s.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
 }

@@ -12,7 +12,7 @@ func TestTestClientLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+	admin := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 
 	testEmail := "testclient_" + time.Now().Format("20060102150405") + "@example.com"
 	testName := "testclient_" + time.Now().Format("150405")
@@ -25,7 +25,7 @@ func TestTestClientLifecycle(t *testing.T) {
 	defer func() { _ = tc.Cleanup(ctx) }()
 
 	// Perform an action as the test client (e.g., get self user info)
-	user, err := tc.Client.GetUser(ctx, tc.userID)
+	user, err := tc.Session.GetUser(ctx, tc.userID)
 	if err != nil {
 		t.Errorf("TestClient could not get user: %v", err)
 	}
@@ -43,7 +43,7 @@ func TestUserClientLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+	admin := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 
 	email := "userclient_" + time.Now().Format("20060102150405") + "@example.com"
 	name := "userclient_" + time.Now().Format("150405")
@@ -67,7 +67,7 @@ func TestUserClientLifecycle(t *testing.T) {
 	defer func() { _ = uc.Cleanup(ctx) }()
 
 	// Perform an action as the user client
-	got, err := uc.Client.GetUser(ctx, user.ID)
+	got, err := uc.Session.GetUser(ctx, user.ID)
 	if err != nil {
 		t.Errorf("UserClient could not get user: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestNewClientFromConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	client := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+	client := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 	if client == nil {
 		t.Fatalf("NewClientFromConfig returned nil client")
 	}

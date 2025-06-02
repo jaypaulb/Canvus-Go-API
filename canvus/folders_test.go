@@ -17,7 +17,7 @@ func TestFolderLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+	admin := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 
 	testEmail := "testfolder_" + time.Now().Format("20060102150405") + "@example.com"
 	testName := "testfolder_" + time.Now().Format("150405")
@@ -27,7 +27,7 @@ func TestFolderLifecycle(t *testing.T) {
 		t.Fatalf("failed to create TestClient: %v", err)
 	}
 	defer func() { _ = tc.Cleanup(ctx) }()
-	client := tc.Client
+	client := tc.Session
 
 	// Create a root test folder for isolation
 	rootFolderName := "testfolder_root_" + time.Now().Format("20060102150405")
@@ -145,7 +145,7 @@ func TestFolderInvalidCases(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+	admin := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 
 	testEmail := "testfolder_" + time.Now().Format("20060102150405") + "@example.com"
 	testName := "testfolder_" + time.Now().Format("150405")
@@ -155,7 +155,7 @@ func TestFolderInvalidCases(t *testing.T) {
 		t.Fatalf("failed to create TestClient: %v", err)
 	}
 	defer func() { _ = tc.Cleanup(ctx) }()
-	client := tc.Client
+	client := tc.Session
 
 	// Get non-existent folder
 	_, err = client.GetFolder(ctx, "nonexistent-folder-id")

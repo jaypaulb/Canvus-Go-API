@@ -19,9 +19,9 @@ type LicenseInfo struct {
 }
 
 // GetLicenseInfo retrieves the current license information.
-func (c *Client) GetLicenseInfo(ctx context.Context) (*LicenseInfo, error) {
+func (s *Session) GetLicenseInfo(ctx context.Context) (*LicenseInfo, error) {
 	var info LicenseInfo
-	err := c.doRequest(ctx, "GET", "license", nil, &info, nil, false)
+	err := s.doRequest(ctx, "GET", "license", nil, &info, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetLicenseInfo: %w", err)
 	}

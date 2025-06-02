@@ -19,17 +19,17 @@ func TestWorkspaceLifecycle(t *testing.T) {
 		t.Fatalf("failed to create UserClient: %v", err)
 	}
 	defer func() { _ = uc.Cleanup(ctx) }()
-	client := uc.Client
+	session := uc.Session
 
 	// List clients and pick the first one (or skip if none)
-	clients, err := client.ListClients(ctx)
+	clients, err := session.ListClients(ctx)
 	if err != nil || len(clients) == 0 {
 		t.Skip("No clients available for workspace tests")
 	}
 	clientID := clients[0].ID
 
 	t.Run("ListWorkspaces", func(t *testing.T) {
-		workspaces, err := client.ListWorkspaces(ctx, clientID)
+		workspaces, err := session.ListWorkspaces(ctx, clientID)
 		if err != nil {
 			t.Fatalf("ListWorkspaces failed: %v", err)
 		}
@@ -40,7 +40,7 @@ func TestWorkspaceLifecycle(t *testing.T) {
 
 	t.Run("GetWorkspace", func(t *testing.T) {
 		selector := WorkspaceSelector{Index: intPtr(0)}
-		ws, err := client.GetWorkspace(ctx, clientID, selector)
+		ws, err := session.GetWorkspace(ctx, clientID, selector)
 		if err != nil {
 			t.Fatalf("GetWorkspace failed: %v", err)
 		}
@@ -51,7 +51,7 @@ func TestWorkspaceLifecycle(t *testing.T) {
 
 	t.Run("ToggleInfoPanel", func(t *testing.T) {
 		selector := WorkspaceSelector{Index: intPtr(0)}
-		err := client.ToggleWorkspaceInfoPanel(ctx, clientID, selector)
+		err := session.ToggleWorkspaceInfoPanel(ctx, clientID, selector)
 		if err != nil {
 			t.Errorf("ToggleWorkspaceInfoPanel failed: %v", err)
 		}
@@ -59,7 +59,7 @@ func TestWorkspaceLifecycle(t *testing.T) {
 
 	t.Run("TogglePinned", func(t *testing.T) {
 		selector := WorkspaceSelector{Index: intPtr(0)}
-		err := client.ToggleWorkspacePinned(ctx, clientID, selector)
+		err := session.ToggleWorkspacePinned(ctx, clientID, selector)
 		if err != nil {
 			t.Errorf("ToggleWorkspacePinned failed: %v", err)
 		}
@@ -67,7 +67,7 @@ func TestWorkspaceLifecycle(t *testing.T) {
 
 	t.Run("UpdateWorkspaceViewport", func(t *testing.T) {
 		selector := WorkspaceSelector{Index: intPtr(0)}
-		ws, err := client.GetWorkspace(ctx, clientID, selector)
+		ws, err := session.GetWorkspace(ctx, clientID, selector)
 		if err != nil {
 			t.Fatalf("GetWorkspace for viewport update failed: %v", err)
 		}
@@ -80,7 +80,7 @@ func TestWorkspaceLifecycle(t *testing.T) {
 			Width:  ws.Size.Width,
 			Height: ws.Size.Height,
 		}
-		_, err = client.UpdateWorkspace(ctx, clientID, selector, UpdateWorkspaceRequest{ViewRectangle: rect})
+		_, err = session.UpdateWorkspace(ctx, clientID, selector, UpdateWorkspaceRequest{ViewRectangle: rect})
 		if err != nil {
 			t.Errorf("UpdateWorkspace (viewport) failed: %v", err)
 		}

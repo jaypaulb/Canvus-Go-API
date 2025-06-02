@@ -56,9 +56,9 @@ type EmailConfig struct {
 }
 
 // GetServerConfig retrieves the server configuration.
-func (c *Client) GetServerConfig(ctx context.Context) (*ServerConfig, error) {
+func (s *Session) GetServerConfig(ctx context.Context) (*ServerConfig, error) {
 	var config ServerConfig
-	err := c.doRequest(ctx, "GET", "server-config", nil, &config, nil, false)
+	err := s.doRequest(ctx, "GET", "server-config", nil, &config, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetServerConfig: %w", err)
 	}
@@ -66,9 +66,9 @@ func (c *Client) GetServerConfig(ctx context.Context) (*ServerConfig, error) {
 }
 
 // UpdateServerConfig updates the server configuration.
-func (c *Client) UpdateServerConfig(ctx context.Context, req ServerConfig) (*ServerConfig, error) {
+func (s *Session) UpdateServerConfig(ctx context.Context, req ServerConfig) (*ServerConfig, error) {
 	var config ServerConfig
-	err := c.doRequest(ctx, "PATCH", "server-config", req, &config, nil, false)
+	err := s.doRequest(ctx, "PATCH", "server-config", req, &config, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateServerConfig: %w", err)
 	}
@@ -76,6 +76,6 @@ func (c *Client) UpdateServerConfig(ctx context.Context, req ServerConfig) (*Ser
 }
 
 // SendTestEmail sends a test email to the current user.
-func (c *Client) SendTestEmail(ctx context.Context) error {
-	return c.doRequest(ctx, "POST", "server-config/send-test-email", nil, nil, nil, false)
+func (s *Session) SendTestEmail(ctx context.Context) error {
+	return s.doRequest(ctx, "POST", "server-config/send-test-email", nil, nil, nil, false)
 }

@@ -12,7 +12,7 @@ func TestAccessTokenLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+	admin := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 
 	// Create a test user to own the token
 	email := "tokenuser_" + time.Now().Format("20060102150405") + "@example.com"
@@ -59,7 +59,7 @@ func TestAccessTokenInvalid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+	admin := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 	// Try to get a non-existent token
 	_, err = admin.GetAccessToken(ctx, 999999, "nonexistent-token-id")
 	if err == nil {

@@ -12,7 +12,7 @@ type WorkspaceWidgetGetter interface {
 }
 
 // resolveWorkspaceIndex resolves a workspace index from a WorkspaceSelector.
-func (c *Client) resolveWorkspaceIndex(ctx context.Context, clientID string, selector WorkspaceSelector) (int, error) {
+func (c *Session) resolveWorkspaceIndex(ctx context.Context, clientID string, selector WorkspaceSelector) (int, error) {
 	if selector.Index != nil {
 		return *selector.Index, nil
 	}
@@ -41,7 +41,7 @@ func (c *Client) resolveWorkspaceIndex(ctx context.Context, clientID string, sel
 }
 
 // ListWorkspaces retrieves all workspaces for a client.
-func (c *Client) ListWorkspaces(ctx context.Context, clientID string) ([]Workspace, error) {
+func (c *Session) ListWorkspaces(ctx context.Context, clientID string) ([]Workspace, error) {
 	var workspaces []Workspace
 	endpoint := fmt.Sprintf("clients/%s/workspaces", clientID)
 	err := c.doRequest(ctx, "GET", endpoint, nil, &workspaces, nil, false)
@@ -52,7 +52,7 @@ func (c *Client) ListWorkspaces(ctx context.Context, clientID string) ([]Workspa
 }
 
 // GetWorkspace retrieves a single workspace by index.
-func (c *Client) GetWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector) (*Workspace, error) {
+func (c *Session) GetWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector) (*Workspace, error) {
 	idx, err := c.resolveWorkspaceIndex(ctx, clientID, selector)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (c *Client) GetWorkspace(ctx context.Context, clientID string, selector Wor
 }
 
 // UpdateWorkspace updates workspace parameters.
-func (c *Client) UpdateWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector, req UpdateWorkspaceRequest) (*Workspace, error) {
+func (c *Session) UpdateWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector, req UpdateWorkspaceRequest) (*Workspace, error) {
 	idx, err := c.resolveWorkspaceIndex(ctx, clientID, selector)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (c *Client) UpdateWorkspace(ctx context.Context, clientID string, selector 
 }
 
 // ToggleWorkspaceInfoPanel toggles the info_panel_visible state.
-func (c *Client) ToggleWorkspaceInfoPanel(ctx context.Context, clientID string, selector WorkspaceSelector) error {
+func (c *Session) ToggleWorkspaceInfoPanel(ctx context.Context, clientID string, selector WorkspaceSelector) error {
 	ws, err := c.GetWorkspace(ctx, clientID, selector)
 	if err != nil {
 		return err
@@ -93,7 +93,7 @@ func (c *Client) ToggleWorkspaceInfoPanel(ctx context.Context, clientID string, 
 }
 
 // ToggleWorkspacePinned toggles the pinned state.
-func (c *Client) ToggleWorkspacePinned(ctx context.Context, clientID string, selector WorkspaceSelector) error {
+func (c *Session) ToggleWorkspacePinned(ctx context.Context, clientID string, selector WorkspaceSelector) error {
 	ws, err := c.GetWorkspace(ctx, clientID, selector)
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func (c *Client) ToggleWorkspacePinned(ctx context.Context, clientID string, sel
 }
 
 // SetWorkspaceViewport sets the workspace viewport by coordinates or widget.
-func SetWorkspaceViewport(ctx context.Context, client WorkspaceWidgetGetter, apiClient *Client, clientID string, selector WorkspaceSelector, opts SetViewportOptions) error {
+func SetWorkspaceViewport(ctx context.Context, client WorkspaceWidgetGetter, apiClient *Session, clientID string, selector WorkspaceSelector, opts SetViewportOptions) error {
 	var rect *Rectangle
 	if opts.WidgetID != nil {
 		widget, err := client.GetWidget(ctx, clientID, *opts.WidgetID)
@@ -136,7 +136,7 @@ func SetWorkspaceViewport(ctx context.Context, client WorkspaceWidgetGetter, api
 }
 
 // OpenCanvasOnWorkspace opens a canvas and optionally centers viewport.
-func (c *Client) OpenCanvasOnWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector, opts OpenCanvasOptions) error {
+func (c *Session) OpenCanvasOnWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector, opts OpenCanvasOptions) error {
 	idx, err := c.resolveWorkspaceIndex(ctx, clientID, selector)
 	if err != nil {
 		return err
@@ -195,6 +195,6 @@ func (c *Client) OpenCanvasOnWorkspace(ctx context.Context, clientID string, sel
 }
 
 // Placeholder for GetWidget (to be implemented)
-func (c *Client) GetWidget(ctx context.Context, clientID string, widgetID string) (*Widget, error) {
+func (c *Session) GetWidget(ctx context.Context, clientID string, widgetID string) (*Widget, error) {
 	return nil, errors.New("GetWidget not implemented")
 }

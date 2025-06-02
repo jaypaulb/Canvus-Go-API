@@ -28,7 +28,7 @@ type UpdateClientRequest struct {
 }
 
 // ListClients retrieves all clients from the Canvus API.
-func (c *Client) ListClients(ctx context.Context) ([]ClientInfo, error) {
+func (c *Session) ListClients(ctx context.Context) ([]ClientInfo, error) {
 	var clients []ClientInfo
 	err := c.doRequest(ctx, "GET", "clients", nil, &clients, nil, false)
 	if err != nil {
@@ -38,7 +38,7 @@ func (c *Client) ListClients(ctx context.Context) ([]ClientInfo, error) {
 }
 
 // GetClient retrieves a client by ID from the Canvus API.
-func (c *Client) GetClient(ctx context.Context, id string) (*ClientInfo, error) {
+func (c *Session) GetClient(ctx context.Context, id string) (*ClientInfo, error) {
 	if id == "" {
 		return nil, fmt.Errorf("GetClient: id is required")
 	}
@@ -52,7 +52,7 @@ func (c *Client) GetClient(ctx context.Context, id string) (*ClientInfo, error) 
 }
 
 // CreateClient creates a new client in the Canvus API.
-func (c *Client) CreateClient(ctx context.Context, req CreateClientRequest) (*ClientInfo, error) {
+func (c *Session) CreateClient(ctx context.Context, req CreateClientRequest) (*ClientInfo, error) {
 	var client ClientInfo
 	err := c.doRequest(ctx, "POST", "clients", req, &client, nil, false)
 	if err != nil {
@@ -62,7 +62,7 @@ func (c *Client) CreateClient(ctx context.Context, req CreateClientRequest) (*Cl
 }
 
 // UpdateClient updates an existing client by ID in the Canvus API.
-func (c *Client) UpdateClient(ctx context.Context, id string, req UpdateClientRequest) (*ClientInfo, error) {
+func (c *Session) UpdateClient(ctx context.Context, id string, req UpdateClientRequest) (*ClientInfo, error) {
 	if id == "" {
 		return nil, fmt.Errorf("UpdateClient: id is required")
 	}
@@ -76,7 +76,7 @@ func (c *Client) UpdateClient(ctx context.Context, id string, req UpdateClientRe
 }
 
 // DeleteClient deletes a client by ID in the Canvus API.
-func (c *Client) DeleteClient(ctx context.Context, id string) error {
+func (c *Session) DeleteClient(ctx context.Context, id string) error {
 	if id == "" {
 		return fmt.Errorf("DeleteClient: id is required")
 	}
@@ -88,26 +88,26 @@ func (c *Client) DeleteClient(ctx context.Context, id string) error {
 	return nil
 }
 
-// TestClient wraps a Client and manages a temporary test user and token.
+// TestClient wraps a Session and manages a temporary test user and token.
 type TestClient struct {
-	Client      *Client
+	Session     *Session
 	userID      int64
 	email       string
 	password    string
 	cleanupFunc func(context.Context) error
 }
 
-// UserClient wraps a Client and manages a temporary token for an existing user.
+// UserClient wraps a Session and manages a temporary token for an existing user.
 type UserClient struct {
-	Client      *Client
+	Session     *Session
 	cleanupFunc func(context.Context) error
 }
 
 // NewTestClient creates a new test user, logs in as that user, and returns a TestClient.
 // The test user and token are deleted on Cleanup.
-func NewTestClient(ctx context.Context, adminClient *Client, baseURL, testEmail, testUsername, testPassword string) (*TestClient, error) {
+func NewTestClient(ctx context.Context, adminSession *Session, baseURL, testEmail, testUsername, testPassword string) (*TestClient, error) {
 	// 1. Create user
-	user, err := adminClient.CreateUser(ctx, CreateUserRequest{
+	user, err := adminSession.CreateUser(ctx, CreateUserRequest{
 		Name:     testUsername,
 		Email:    testEmail,
 		Password: testPassword,
@@ -116,19 +116,19 @@ func NewTestClient(ctx context.Context, adminClient *Client, baseURL, testEmail,
 		return nil, err
 	}
 	// 2. Login as new user
-	testClient := NewClient(baseURL)
-	err = testClient.Login(ctx, testEmail, testPassword)
+	testSession := NewSession(baseURL)
+	err = testSession.Login(ctx, testEmail, testPassword)
 	if err != nil {
 		// Cleanup user if login fails
-		_ = adminClient.DeleteUser(ctx, user.ID)
+		_ = adminSession.DeleteUser(ctx, user.ID)
 		return nil, err
 	}
 	cleanup := func(ctx context.Context) error {
-		_ = testClient.Logout(ctx)
-		return adminClient.DeleteUser(ctx, user.ID)
+		_ = testSession.Logout(ctx)
+		return adminSession.DeleteUser(ctx, user.ID)
 	}
 	return &TestClient{
-		Client:      testClient,
+		Session:     testSession,
 		userID:      user.ID,
 		email:       testEmail,
 		password:    testPassword,
@@ -147,16 +147,16 @@ func (tc *TestClient) Cleanup(ctx context.Context) error {
 // NewUserClient logs in as an existing user and returns a UserClient with a temporary token.
 // The token is invalidated on Cleanup.
 func NewUserClient(ctx context.Context, baseURL, email, password string) (*UserClient, error) {
-	client := NewClient(baseURL)
-	err := client.Login(ctx, email, password)
+	session := NewSession(baseURL)
+	err := session.Login(ctx, email, password)
 	if err != nil {
 		return nil, err
 	}
 	cleanup := func(ctx context.Context) error {
-		return client.Logout(ctx)
+		return session.Logout(ctx)
 	}
 	return &UserClient{
-		Client:      client,
+		Session:     session,
 		cleanupFunc: cleanup,
 	}, nil
 }
@@ -169,8 +169,8 @@ func (uc *UserClient) Cleanup(ctx context.Context) error {
 	return nil
 }
 
-// NewClientFromConfig creates a Client using credentials from a config/settings file.
+// NewSessionFromConfig creates a Session using credentials from a config/settings file.
 // This is the standard persistent client; no automatic cleanup is performed.
-func NewClientFromConfig(baseURL, apiKey string) *Client {
-	return NewClient(baseURL, WithAPIKey(apiKey))
+func NewSessionFromConfig(baseURL, apiKey string) *Session {
+	return NewSession(baseURL, WithAPIKey(apiKey))
 }

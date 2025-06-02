@@ -14,9 +14,9 @@ type ServerInfo struct {
 }
 
 // GetServerInfo retrieves information about the Canvus Server instance.
-func (c *Client) GetServerInfo(ctx context.Context) (*ServerInfo, error) {
+func (s *Session) GetServerInfo(ctx context.Context) (*ServerInfo, error) {
 	var info ServerInfo
-	err := c.doRequest(ctx, "GET", "server-info", nil, &info, nil, false)
+	err := s.doRequest(ctx, "GET", "server-info", nil, &info, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetServerInfo: %w", err)
 	}

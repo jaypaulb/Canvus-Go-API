@@ -42,49 +42,49 @@ func (a *TokenAuthenticator) Authenticate(req *http.Request) {
 	}
 }
 
-// ClientOption configures a Client.
-type ClientOption func(*Client)
+// SessionOption configures a Session.
+type SessionOption func(*Session)
 
-// WithAPIKey configures the client to use a static API key.
-func WithAPIKey(apiKey string) ClientOption {
-	return func(c *Client) {
-		c.authenticator = &APIKeyAuthenticator{Header: "Private-Token", APIKey: apiKey}
+// WithAPIKey configures the session to use a static API key.
+func WithAPIKey(apiKey string) SessionOption {
+	return func(s *Session) {
+		s.authenticator = &APIKeyAuthenticator{Header: "Private-Token", APIKey: apiKey}
 	}
 }
 
-// WithToken configures the client to use a bearer token.
-func WithToken(token string) ClientOption {
-	return func(c *Client) {
-		c.authenticator = &TokenAuthenticator{Token: token}
+// WithToken configures the session to use a bearer token.
+func WithToken(token string) SessionOption {
+	return func(s *Session) {
+		s.authenticator = &TokenAuthenticator{Token: token}
 	}
 }
 
-// Client is the main entry point for interacting with the Canvus API.
-type Client struct {
+// Session is the main entry point for interacting with the Canvus API.
+type Session struct {
 	BaseURL       string
 	HTTPClient    *http.Client
 	authenticator Authenticator
 	userID        int64 // ID of the authenticated user, if available
 }
 
-// NewClient creates a new Canvus API client.
+// NewSession creates a new Canvus API session.
 // If httpClient is nil, http.DefaultClient is used.
-func NewClient(baseURL string, opts ...ClientOption) *Client {
-	c := &Client{
+func NewSession(baseURL string, opts ...SessionOption) *Session {
+	s := &Session{
 		BaseURL:    baseURL,
 		HTTPClient: http.DefaultClient,
 	}
 	for _, opt := range opts {
-		opt(c)
+		opt(s)
 	}
-	return c
+	return s
 }
 
 // doRequest is a helper for making HTTP requests to the Canvus API.
 // queryParams is an optional map of query parameters to append to the URL.
 // If rawResponse is true, the response body is returned as []byte in 'out' (must be *[]byte).
-func (c *Client) doRequest(ctx context.Context, method, endpoint string, body interface{}, out interface{}, queryParams map[string]string, rawResponse bool) error {
-	u, err := url.Parse(c.BaseURL)
+func (s *Session) doRequest(ctx context.Context, method, endpoint string, body interface{}, out interface{}, queryParams map[string]string, rawResponse bool) error {
+	u, err := url.Parse(s.BaseURL)
 	if err != nil {
 		return err
 	}
@@ -112,14 +112,14 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body in
 	if err != nil {
 		return err
 	}
-	if c.authenticator != nil {
-		c.authenticator.Authenticate(req)
+	if s.authenticator != nil {
+		s.authenticator.Authenticate(req)
 	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := s.HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body in
 }
 
 // Login authenticates a user and stores the returned token and user ID for future requests.
-func (c *Client) Login(ctx context.Context, email, password string) error {
+func (s *Session) Login(ctx context.Context, email, password string) error {
 	loginReq := map[string]string{
 		"email":    email,
 		"password": password,
@@ -163,37 +163,37 @@ func (c *Client) Login(ctx context.Context, email, password string) error {
 			ID int64 `json:"id"`
 		} `json:"user"`
 	}
-	err := c.doRequest(ctx, http.MethodPost, "users/login", loginReq, &loginResp, nil, false)
+	err := s.doRequest(ctx, http.MethodPost, "users/login", loginReq, &loginResp, nil, false)
 	if err != nil {
 		return err
 	}
 	if loginResp.Token == "" {
 		return errors.New("login: no token returned")
 	}
-	c.authenticator = &TokenAuthenticator{Token: loginResp.Token}
-	c.userID = loginResp.User.ID
+	s.authenticator = &TokenAuthenticator{Token: loginResp.Token}
+	s.userID = loginResp.User.ID
 	return nil
 }
 
 // Logout invalidates the current token and clears authentication.
 // It calls POST /users/logout and clears the authenticator on success.
-func (c *Client) Logout(ctx context.Context) error {
+func (s *Session) Logout(ctx context.Context) error {
 	logoutReq := map[string]string{}
 	var logoutResp map[string]interface{}
-	err := c.doRequest(ctx, http.MethodPost, "users/logout", logoutReq, &logoutResp, nil, false)
+	err := s.doRequest(ctx, http.MethodPost, "users/logout", logoutReq, &logoutResp, nil, false)
 	if err != nil {
 		return err
 	}
-	c.authenticator = nil
+	s.authenticator = nil
 	return nil
 }
 
 // Users provides access to user management methods.
-func (c *Client) Users() *Client {
-	return c
+func (s *Session) Users() *Session {
+	return s
 }
 
 // UserID returns the authenticated user's ID, or 0 if not logged in.
-func (c *Client) UserID() int64 {
-	return c.userID
+func (s *Session) UserID() int64 {
+	return s.userID
 }

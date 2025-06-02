@@ -17,7 +17,7 @@ func TestCanvasLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+	admin := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 
 	testEmail := "testcanvas_" + time.Now().Format("20060102150405") + "@example.com"
 	testName := "testcanvas_" + time.Now().Format("150405")
@@ -27,21 +27,21 @@ func TestCanvasLifecycle(t *testing.T) {
 		t.Fatalf("failed to create TestClient: %v", err)
 	}
 	defer func() { _ = tc.Cleanup(ctx) }()
-	client := tc.Client
+	session := tc.Session
 
 	// Create a test canvas
 	canvasName := "testcanvas_" + time.Now().Format("20060102150405")
 	t.Logf("[CreateCanvas] Sending: Name=%q", canvasName)
-	canvas, err := client.CreateCanvas(ctx, CreateCanvasRequest{Name: canvasName})
+	canvas, err := session.CreateCanvas(ctx, CreateCanvasRequest{Name: canvasName})
 	if err != nil {
 		t.Fatalf("failed to create canvas: %v", err)
 	}
 	// Clean up: delete the canvas at the end
-	defer func() { _ = client.DeleteCanvas(ctx, canvas.ID) }()
+	defer func() { _ = session.DeleteCanvas(ctx, canvas.ID) }()
 
 	// List canvases and check the new canvas is present
 	t.Logf("[ListCanvases] Listing all canvases")
-	canvases, err := client.ListCanvases(ctx)
+	canvases, err := session.ListCanvases(ctx)
 	if err != nil {
 		t.Errorf("failed to list canvases: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestCanvasLifecycle(t *testing.T) {
 
 	// Get the canvas by ID
 	t.Logf("[GetCanvas] ID=%q", canvas.ID)
-	got, err := client.GetCanvas(ctx, canvas.ID)
+	got, err := session.GetCanvas(ctx, canvas.ID)
 	if err != nil {
 		t.Errorf("failed to get canvas: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestCanvasLifecycle(t *testing.T) {
 	// Update the canvas name (PATCH /canvases/:id)
 	newName := canvasName + "_renamed"
 	t.Logf("[UpdateCanvas] ID=%q, Name=%q", canvas.ID, newName)
-	updated, err := client.UpdateCanvas(ctx, canvas.ID, UpdateCanvasRequest{Name: newName})
+	updated, err := session.UpdateCanvas(ctx, canvas.ID, UpdateCanvasRequest{Name: newName})
 	if err != nil {
 		t.Errorf("failed to update canvas name: %v", err)
 	} else {
@@ -80,7 +80,7 @@ func TestCanvasLifecycle(t *testing.T) {
 
 	// Update the canvas mode (PATCH /canvases/:id)
 	t.Logf("[UpdateCanvas] ID=%q, Mode=%q", canvas.ID, "demo")
-	updatedMode, err := client.UpdateCanvas(ctx, canvas.ID, UpdateCanvasRequest{Mode: "demo"})
+	updatedMode, err := session.UpdateCanvas(ctx, canvas.ID, UpdateCanvasRequest{Mode: "demo"})
 	if err != nil {
 		t.Errorf("failed to update canvas mode: %v", err)
 	} else {
@@ -91,33 +91,33 @@ func TestCanvasLifecycle(t *testing.T) {
 
 	// Save and restore demo state (should not error)
 	t.Logf("[SaveDemoState] ID=%q", canvas.ID)
-	err = client.SaveDemoState(ctx, canvas.ID)
+	err = session.SaveDemoState(ctx, canvas.ID)
 	if err != nil {
 		t.Errorf("failed to save demo state: %v", err)
 	}
 	t.Logf("[RestoreDemoCanvas] ID=%q", canvas.ID)
-	err = client.RestoreDemoCanvas(ctx, canvas.ID)
+	err = session.RestoreDemoCanvas(ctx, canvas.ID)
 	if err != nil {
 		t.Errorf("failed to restore demo canvas: %v", err)
 	}
 
 	// Get preview (may be empty, but should not error)
 	t.Logf("[GetCanvasPreview] ID=%q", canvas.ID)
-	_, err = client.GetCanvasPreview(ctx, canvas.ID)
+	_, err = session.GetCanvasPreview(ctx, canvas.ID)
 	if err != nil {
 		t.Logf("GetCanvasPreview: %v (may be expected if no preview)", err)
 	}
 
 	// Permissions: get and set
 	t.Logf("[GetCanvasPermissions] ID=%q", canvas.ID)
-	perms, err := client.GetCanvasPermissions(ctx, canvas.ID)
+	perms, err := session.GetCanvasPermissions(ctx, canvas.ID)
 	if err != nil {
 		t.Errorf("failed to get canvas permissions: %v", err)
 	}
 	perms.EditorsCanShare = false
 	perms.LinkPermission = "view"
 	t.Logf("[SetCanvasPermissions] ID=%q, LinkPermission=%q", canvas.ID, perms.LinkPermission)
-	updatedPerms, err := client.SetCanvasPermissions(ctx, canvas.ID, *perms)
+	updatedPerms, err := session.SetCanvasPermissions(ctx, canvas.ID, *perms)
 	if err != nil {
 		t.Errorf("failed to set canvas permissions: %v", err)
 	}
@@ -128,15 +128,15 @@ func TestCanvasLifecycle(t *testing.T) {
 	// Move/copy/trash: create a second folder, move/copy canvas, then trash
 	folderName := "testfolder_for_canvas_" + time.Now().Format("20060102150405")
 	t.Logf("[CreateFolder] Name=%q", folderName)
-	folder, err := client.CreateFolder(ctx, CreateFolderRequest{Name: folderName})
+	folder, err := session.CreateFolder(ctx, CreateFolderRequest{Name: folderName})
 	if err != nil {
 		t.Fatalf("failed to create folder for move/copy: %v", err)
 	}
-	defer func() { _ = client.DeleteFolder(ctx, folder.ID) }()
+	defer func() { _ = session.DeleteFolder(ctx, folder.ID) }()
 
 	// Move canvas
 	t.Logf("[MoveCanvas] CanvasID=%q, FolderID=%q", canvas.ID, folder.ID)
-	moved, err := client.MoveCanvas(ctx, canvas.ID, MoveOrCopyCanvasRequest{FolderID: folder.ID, Conflicts: "replace"})
+	moved, err := session.MoveCanvas(ctx, canvas.ID, MoveOrCopyCanvasRequest{FolderID: folder.ID, Conflicts: "replace"})
 	if err != nil {
 		t.Errorf("failed to move canvas: %v", err)
 	} else if moved.FolderID != folder.ID {
@@ -145,15 +145,15 @@ func TestCanvasLifecycle(t *testing.T) {
 
 	// Copy canvas
 	t.Logf("[CopyCanvas] CanvasID=%q, FolderID=%q", canvas.ID, folder.ID)
-	copied, err := client.CopyCanvas(ctx, canvas.ID, MoveOrCopyCanvasRequest{FolderID: folder.ID, Conflicts: "replace"})
+	copied, err := session.CopyCanvas(ctx, canvas.ID, MoveOrCopyCanvasRequest{FolderID: folder.ID, Conflicts: "replace"})
 	if err != nil {
 		t.Errorf("failed to copy canvas: %v", err)
 	}
-	defer func() { _ = client.DeleteCanvas(ctx, copied.ID) }()
+	defer func() { _ = session.DeleteCanvas(ctx, copied.ID) }()
 
 	// Trash the copied canvas
 	t.Logf("[TrashCanvas] CanvasID=%q, TrashID=%q", copied.ID, "trash."+folder.ID)
-	trashed, err := client.TrashCanvas(ctx, copied.ID, "trash."+folder.ID)
+	trashed, err := session.TrashCanvas(ctx, copied.ID, "trash."+folder.ID)
 	if err != nil {
 		t.Errorf("failed to trash canvas: %v", err)
 	}
@@ -169,7 +169,7 @@ func TestCanvasInvalidCases(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	admin := NewClientFromConfig(ts.APIBaseURL, ts.APIKey)
+	admin := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 
 	// Get non-existent canvas
 	_, err = admin.GetCanvas(ctx, "nonexistent-canvas-id")

@@ -52,9 +52,9 @@ type FolderGroupPermission struct {
 }
 
 // ListFolders retrieves all folders.
-func (c *Client) ListFolders(ctx context.Context) ([]Folder, error) {
+func (s *Session) ListFolders(ctx context.Context) ([]Folder, error) {
 	var folders []Folder
-	err := c.doRequest(ctx, "GET", "canvas-folders", nil, &folders, nil, false)
+	err := s.doRequest(ctx, "GET", "canvas-folders", nil, &folders, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("ListFolders: %w", err)
 	}
@@ -62,10 +62,10 @@ func (c *Client) ListFolders(ctx context.Context) ([]Folder, error) {
 }
 
 // GetFolder retrieves a single folder by ID.
-func (c *Client) GetFolder(ctx context.Context, id string) (*Folder, error) {
+func (s *Session) GetFolder(ctx context.Context, id string) (*Folder, error) {
 	var folder Folder
 	path := fmt.Sprintf("canvas-folders/%s", id)
-	err := c.doRequest(ctx, "GET", path, nil, &folder, nil, false)
+	err := s.doRequest(ctx, "GET", path, nil, &folder, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetFolder: %w", err)
 	}
@@ -73,9 +73,9 @@ func (c *Client) GetFolder(ctx context.Context, id string) (*Folder, error) {
 }
 
 // CreateFolder creates a new folder.
-func (c *Client) CreateFolder(ctx context.Context, req CreateFolderRequest) (*Folder, error) {
+func (s *Session) CreateFolder(ctx context.Context, req CreateFolderRequest) (*Folder, error) {
 	var folder Folder
-	err := c.doRequest(ctx, "POST", "canvas-folders", req, &folder, nil, false)
+	err := s.doRequest(ctx, "POST", "canvas-folders", req, &folder, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("CreateFolder: %w", err)
 	}
@@ -83,11 +83,11 @@ func (c *Client) CreateFolder(ctx context.Context, req CreateFolderRequest) (*Fo
 }
 
 // RenameFolder renames a folder by ID.
-func (c *Client) RenameFolder(ctx context.Context, id string, name string) (*Folder, error) {
+func (s *Session) RenameFolder(ctx context.Context, id string, name string) (*Folder, error) {
 	var folder Folder
 	path := fmt.Sprintf("canvas-folders/%s", id)
 	req := RenameFolderRequest{Name: name}
-	err := c.doRequest(ctx, "PATCH", path, req, &folder, nil, false)
+	err := s.doRequest(ctx, "PATCH", path, req, &folder, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("RenameFolder: %w", err)
 	}
@@ -95,11 +95,11 @@ func (c *Client) RenameFolder(ctx context.Context, id string, name string) (*Fol
 }
 
 // MoveFolder moves a folder inside another folder.
-func (c *Client) MoveFolder(ctx context.Context, id string, parentID string, conflicts string) (*Folder, error) {
+func (s *Session) MoveFolder(ctx context.Context, id string, parentID string, conflicts string) (*Folder, error) {
 	var folder Folder
 	path := fmt.Sprintf("canvas-folders/%s/move", id)
 	req := MoveOrCopyFolderRequest{ParentID: parentID, Conflicts: conflicts}
-	err := c.doRequest(ctx, "POST", path, req, &folder, nil, false)
+	err := s.doRequest(ctx, "POST", path, req, &folder, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("MoveFolder: %w", err)
 	}
@@ -107,11 +107,11 @@ func (c *Client) MoveFolder(ctx context.Context, id string, parentID string, con
 }
 
 // CopyFolder copies a folder inside another folder.
-func (c *Client) CopyFolder(ctx context.Context, id string, parentID string, conflicts string) (*Folder, error) {
+func (s *Session) CopyFolder(ctx context.Context, id string, parentID string, conflicts string) (*Folder, error) {
 	var folder Folder
 	path := fmt.Sprintf("canvas-folders/%s/copy", id)
 	req := MoveOrCopyFolderRequest{ParentID: parentID, Conflicts: conflicts}
-	err := c.doRequest(ctx, "POST", path, req, &folder, nil, false)
+	err := s.doRequest(ctx, "POST", path, req, &folder, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("CopyFolder: %w", err)
 	}
@@ -119,8 +119,8 @@ func (c *Client) CopyFolder(ctx context.Context, id string, parentID string, con
 }
 
 // TrashFolder moves a folder to the trash folder.
-func (c *Client) TrashFolder(ctx context.Context, id string, _ string) (*Folder, error) {
-	userID := c.UserID()
+func (s *Session) TrashFolder(ctx context.Context, id string, _ string) (*Folder, error) {
+	userID := s.UserID()
 	if userID == 0 {
 		return nil, fmt.Errorf("TrashFolder: user ID not set; must login first")
 	}
@@ -128,7 +128,7 @@ func (c *Client) TrashFolder(ctx context.Context, id string, _ string) (*Folder,
 	var folder Folder
 	path := fmt.Sprintf("canvas-folders/%s/move", id)
 	req := MoveOrCopyFolderRequest{ParentID: trashID}
-	err := c.doRequest(ctx, "POST", path, req, &folder, nil, false)
+	err := s.doRequest(ctx, "POST", path, req, &folder, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("TrashFolder: %w", err)
 	}
@@ -136,22 +136,22 @@ func (c *Client) TrashFolder(ctx context.Context, id string, _ string) (*Folder,
 }
 
 // DeleteFolder permanently deletes a folder by ID.
-func (c *Client) DeleteFolder(ctx context.Context, id string) error {
+func (s *Session) DeleteFolder(ctx context.Context, id string) error {
 	path := fmt.Sprintf("canvas-folders/%s", id)
-	return c.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
+	return s.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
 }
 
 // DeleteFolderContents deletes all children of a folder.
-func (c *Client) DeleteFolderContents(ctx context.Context, id string) error {
+func (s *Session) DeleteFolderContents(ctx context.Context, id string) error {
 	path := fmt.Sprintf("canvas-folders/%s/children", id)
-	return c.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
+	return s.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
 }
 
 // GetFolderPermissions gets the permission overrides on a folder.
-func (c *Client) GetFolderPermissions(ctx context.Context, id string) (*FolderPermissions, error) {
+func (s *Session) GetFolderPermissions(ctx context.Context, id string) (*FolderPermissions, error) {
 	var perms FolderPermissions
 	path := fmt.Sprintf("canvas-folders/%s/permissions", id)
-	err := c.doRequest(ctx, "GET", path, nil, &perms, nil, false)
+	err := s.doRequest(ctx, "GET", path, nil, &perms, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetFolderPermissions: %w", err)
 	}
@@ -159,10 +159,10 @@ func (c *Client) GetFolderPermissions(ctx context.Context, id string) (*FolderPe
 }
 
 // SetFolderPermissions sets permission overrides on a folder.
-func (c *Client) SetFolderPermissions(ctx context.Context, id string, perms FolderPermissions) (*FolderPermissions, error) {
+func (s *Session) SetFolderPermissions(ctx context.Context, id string, perms FolderPermissions) (*FolderPermissions, error) {
 	var updated FolderPermissions
 	path := fmt.Sprintf("canvas-folders/%s/permissions", id)
-	err := c.doRequest(ctx, "POST", path, perms, &updated, nil, false)
+	err := s.doRequest(ctx, "POST", path, perms, &updated, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("SetFolderPermissions: %w", err)
 	}

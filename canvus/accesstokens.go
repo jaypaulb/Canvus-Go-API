@@ -19,10 +19,10 @@ type CreateAccessTokenRequest struct {
 }
 
 // ListAccessTokens retrieves all access tokens for a user from the Canvus API.
-func (c *Client) ListAccessTokens(ctx context.Context, userID int64) ([]AccessToken, error) {
+func (s *Session) ListAccessTokens(ctx context.Context, userID int64) ([]AccessToken, error) {
 	var tokens []AccessToken
 	endpoint := fmt.Sprintf("users/%d/access-tokens", userID)
-	err := c.doRequest(ctx, "GET", endpoint, nil, &tokens, nil, false)
+	err := s.doRequest(ctx, "GET", endpoint, nil, &tokens, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("ListAccessTokens: %w", err)
 	}
@@ -30,13 +30,13 @@ func (c *Client) ListAccessTokens(ctx context.Context, userID int64) ([]AccessTo
 }
 
 // GetAccessToken retrieves an access token by ID for a user from the Canvus API.
-func (c *Client) GetAccessToken(ctx context.Context, userID int64, tokenID string) (*AccessToken, error) {
+func (s *Session) GetAccessToken(ctx context.Context, userID int64, tokenID string) (*AccessToken, error) {
 	if tokenID == "" {
 		return nil, fmt.Errorf("GetAccessToken: tokenID is required")
 	}
 	var token AccessToken
 	endpoint := fmt.Sprintf("users/%d/access-tokens/%s", userID, tokenID)
-	err := c.doRequest(ctx, "GET", endpoint, nil, &token, nil, false)
+	err := s.doRequest(ctx, "GET", endpoint, nil, &token, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetAccessToken: %w", err)
 	}
@@ -44,10 +44,10 @@ func (c *Client) GetAccessToken(ctx context.Context, userID int64, tokenID strin
 }
 
 // CreateAccessToken creates a new access token for a user in the Canvus API.
-func (c *Client) CreateAccessToken(ctx context.Context, userID int64, req CreateAccessTokenRequest) (*AccessToken, error) {
+func (s *Session) CreateAccessToken(ctx context.Context, userID int64, req CreateAccessTokenRequest) (*AccessToken, error) {
 	var token AccessToken
 	endpoint := fmt.Sprintf("users/%d/access-tokens", userID)
-	err := c.doRequest(ctx, "POST", endpoint, req, &token, nil, false)
+	err := s.doRequest(ctx, "POST", endpoint, req, &token, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("CreateAccessToken: %w", err)
 	}
@@ -55,12 +55,12 @@ func (c *Client) CreateAccessToken(ctx context.Context, userID int64, req Create
 }
 
 // DeleteAccessToken deletes an access token by ID for a user in the Canvus API.
-func (c *Client) DeleteAccessToken(ctx context.Context, userID int64, tokenID string) error {
+func (s *Session) DeleteAccessToken(ctx context.Context, userID int64, tokenID string) error {
 	if tokenID == "" {
 		return fmt.Errorf("DeleteAccessToken: tokenID is required")
 	}
 	endpoint := fmt.Sprintf("users/%d/access-tokens/%s", userID, tokenID)
-	err := c.doRequest(ctx, "DELETE", endpoint, nil, nil, nil, false)
+	err := s.doRequest(ctx, "DELETE", endpoint, nil, nil, nil, false)
 	if err != nil {
 		return fmt.Errorf("DeleteAccessToken: %w", err)
 	}

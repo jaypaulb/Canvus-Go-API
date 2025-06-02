@@ -18,7 +18,7 @@ type AuditEvent struct {
 }
 
 // ListAuditEvents retrieves audit log events with optional pagination and filtering.
-func (c *Client) ListAuditEvents(ctx context.Context, opts *AuditLogOptions) ([]AuditEvent, error) {
+func (s *Session) ListAuditEvents(ctx context.Context, opts *AuditLogOptions) ([]AuditEvent, error) {
 	var events []AuditEvent
 	query := map[string]string{}
 	if opts != nil {
@@ -26,7 +26,7 @@ func (c *Client) ListAuditEvents(ctx context.Context, opts *AuditLogOptions) ([]
 			query["per_page"] = fmt.Sprintf("%d", opts.PerPage)
 		}
 	}
-	err := c.doRequest(ctx, "GET", "audit-log", nil, &events, query, false)
+	err := s.doRequest(ctx, "GET", "audit-log", nil, &events, query, false)
 	if err != nil {
 		return nil, fmt.Errorf("ListAuditEvents: %w", err)
 	}

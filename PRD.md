@@ -134,6 +134,11 @@ This order must be followed for both development and CI test execution to avoid 
 ## API/SDK Design Notes
 
 - All JSON field names sent to the Canvus API must be lowercase (e.g., 'name', 'mode'), matching the API's requirements. This is critical for PATCH/POST requests to work as expected.
+- **BREAKING CHANGE: Rename Client to Session**
+  - The SDK's main struct, previously named Client, will be renamed to Session throughout the codebase.
+  - Rationale: The Canvus API has a 'clients' resource, which can cause confusion for SDK users. 'Session' more accurately reflects the purpose of the struct (an authenticated API session) and avoids ambiguity.
+  - All references, documentation, and tests will be updated accordingly.
+  - Migration note: This is a breaking change and will require users to update their code.
 
 ---
 
@@ -175,6 +180,7 @@ This order must be followed for both development and CI test execution to avoid 
    - Helper tools, code samples, and documentation.
 5. **Release**
    - Go module packaging, README, and tagged release.
+- [ ] BREAKING: Refactor Client to Session throughout SDK and documentation
 
 ---
 

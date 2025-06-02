@@ -43,9 +43,9 @@ type UpdateUserRequest struct {
 }
 
 // ListUsers retrieves all users from the Canvus API.
-func (c *Client) ListUsers(ctx context.Context) ([]User, error) {
+func (s *Session) ListUsers(ctx context.Context) ([]User, error) {
 	var users []User
-	err := c.doRequest(ctx, "GET", "users", nil, &users, nil, false)
+	err := s.doRequest(ctx, "GET", "users", nil, &users, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("ListUsers: %w", err)
 	}
@@ -53,13 +53,13 @@ func (c *Client) ListUsers(ctx context.Context) ([]User, error) {
 }
 
 // GetUser retrieves a user by ID from the Canvus API.
-func (c *Client) GetUser(ctx context.Context, id int64) (*User, error) {
+func (s *Session) GetUser(ctx context.Context, id int64) (*User, error) {
 	if id == 0 {
 		return nil, fmt.Errorf("GetUser: id is required")
 	}
 	var user User
 	endpoint := fmt.Sprintf("users/%d", id)
-	err := c.doRequest(ctx, "GET", endpoint, nil, &user, nil, false)
+	err := s.doRequest(ctx, "GET", endpoint, nil, &user, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetUser: %w", err)
 	}
@@ -67,9 +67,9 @@ func (c *Client) GetUser(ctx context.Context, id int64) (*User, error) {
 }
 
 // CreateUser creates a new user in the Canvus API.
-func (c *Client) CreateUser(ctx context.Context, req CreateUserRequest) (*User, error) {
+func (s *Session) CreateUser(ctx context.Context, req CreateUserRequest) (*User, error) {
 	var user User
-	err := c.doRequest(ctx, "POST", "users", req, &user, nil, false)
+	err := s.doRequest(ctx, "POST", "users", req, &user, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("CreateUser: %w", err)
 	}
@@ -77,13 +77,13 @@ func (c *Client) CreateUser(ctx context.Context, req CreateUserRequest) (*User, 
 }
 
 // UpdateUser updates an existing user by ID in the Canvus API.
-func (c *Client) UpdateUser(ctx context.Context, id int64, req UpdateUserRequest) (*User, error) {
+func (s *Session) UpdateUser(ctx context.Context, id int64, req UpdateUserRequest) (*User, error) {
 	if id == 0 {
 		return nil, fmt.Errorf("UpdateUser: id is required")
 	}
 	var user User
 	endpoint := fmt.Sprintf("users/%d", id)
-	err := c.doRequest(ctx, "PATCH", endpoint, req, &user, nil, false)
+	err := s.doRequest(ctx, "PATCH", endpoint, req, &user, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateUser: %w", err)
 	}
@@ -91,12 +91,12 @@ func (c *Client) UpdateUser(ctx context.Context, id int64, req UpdateUserRequest
 }
 
 // DeleteUser deletes a user by ID in the Canvus API.
-func (c *Client) DeleteUser(ctx context.Context, id int64) error {
+func (s *Session) DeleteUser(ctx context.Context, id int64) error {
 	if id == 0 {
 		return fmt.Errorf("DeleteUser: id is required")
 	}
 	endpoint := fmt.Sprintf("users/%d", id)
-	err := c.doRequest(ctx, "DELETE", endpoint, nil, nil, nil, false)
+	err := s.doRequest(ctx, "DELETE", endpoint, nil, nil, nil, false)
 	if err != nil {
 		return fmt.Errorf("DeleteUser: %w", err)
 	}

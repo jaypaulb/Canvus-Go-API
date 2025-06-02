@@ -242,5 +242,9 @@ The SDK must support three primary client instantiation patterns:
     - [x] List/Get/Update workspace
     - [x] Toggle info panel and pinned state
     - [x] Set viewport (by coords)
-    - [ ] Set viewport (by widget) [TODO: pending widget endpoint]
-    - [ ] Open canvas (with optional viewport centering) [TODO: pending widget/endpoint]
+    - [ ] (Revisit: Set viewport by widget, Open canvas with viewport centering) [Return to after widget endpoints are implemented]
+- [x] Refactor: Rename Client struct and all related code to Session to avoid confusion with API clients (BREAKING CHANGE)
+
+**2024-06-15 Summary:**
+- Completed Client-to-Session refactor across all code and tests.
+- All tests pass. Ready to proceed to the next endpoints.
