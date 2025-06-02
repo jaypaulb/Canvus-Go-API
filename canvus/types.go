@@ -82,10 +82,6 @@ type Workspace struct {
 	// ... other fields
 }
 
-type ServerInfo struct {
-	// ... fields
-}
-
 // Permissions represents access permissions for a resource.
 type Permissions struct {
 	// ... fields

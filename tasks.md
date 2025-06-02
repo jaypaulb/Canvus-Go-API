@@ -61,7 +61,7 @@ For each missing endpoint/feature:
     - [x] Server Config: implement and test all actions
     - [x] License: implement (do not test activation)
     - [x] Audit Log: implement and test all actions
-    - [ ] Server Info: implement and test all actions
+    - [x] Server Info: implement and test all actions
 2. **Canvas Endpoints**
     - [ ] Implement and test all Canvas actions (CRUD, move, copy, permissions, etc.)
 3. **Client & Workspace Endpoints**
