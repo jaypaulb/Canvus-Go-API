@@ -62,11 +62,6 @@ type ColorPreset struct {
 	// ... other fields
 }
 
-type AuditEvent struct {
-	ID string
-	// ... other fields
-}
-
 type MipmapInfo struct {
 	Hash string
 	// ... other fields

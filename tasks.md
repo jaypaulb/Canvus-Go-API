@@ -34,15 +34,17 @@ This document is the authoritative project plan. **Update this file with every n
 - [x] Document findings and update the PRD if needed (see [PRD.md](./PRD.md))
 
 **2024-06-13 Summary:**
+
 - Completed identification, mapping, and documentation of required SDK abstractions and utilities. See [Abstractions.md](./Abstractions.md) for details and [PRD.md](./PRD.md) for cross-references.
 
 ### 3. API Coverage Analysis
 
-- [x] Extract all endpoints and features from the Docs 
+- [x] Extract all endpoints and features from the Docs
 
 ### 4. Go API Library Expansion
 
 For each missing endpoint/feature:
+
 - [ ] Define Go method signature and data structures
 - [ ] Implement the method
 - [ ] Add error handling and authentication
@@ -58,7 +60,7 @@ For each missing endpoint/feature:
     - [x] Canvas Folders: implement and test all actions
     - [x] Server Config: implement and test all actions
     - [x] License: implement (do not test activation)
-    - [ ] Audit Log: implement and test all actions
+    - [x] Audit Log: implement and test all actions
     - [ ] Server Info: implement and test all actions
 2. **Canvas Endpoints**
     - [ ] Implement and test all Canvas actions (CRUD, move, copy, permissions, etc.)
@@ -74,10 +76,12 @@ For each missing endpoint/feature:
     - [ ] Implement and test all read-only endpoints (Widgets, Annotations)
 
 #### Testing & Cleanup Policy
+
 - [ ] All tests must clean up (permanently delete) resources they create, even on failure. Moving to trash is not sufficient.
 - [ ] Each test must use unique resource names/IDs to avoid collisions and ensure safe cleanup.
 
 ### Required Abstractions/Utilities
+
 - **Authentication:** API key (from env/config), secure handling
 - **Context support:** All requests accept `context.Context`
 - **Error handling:** Centralized, idiomatic Go error types
@@ -87,7 +91,6 @@ For each missing endpoint/feature:
 - **CLI utilities:** (Optional) for common workflows
 - **Documentation:** Godoc, README, code samples
 - **Testing:** Unit/integration tests for all features
-
 
 ### 5. Build the Go SDK
 
@@ -108,12 +111,14 @@ For each missing endpoint/feature:
 ## 2024-06-11: Greenfield Go SDK Approach & Planning
 
 ### New Approach
+
 - The Canvus Go SDK will be built from scratch, following modern Go community best practices.
 - Old Python/Go libraries are not used as a roadmap; they serve only as historical context.
 - The SDK will be idiomatic, modular, and designed for the broader Go developer community.
 - Focus: developer experience, full API coverage, strong documentation, and extensibility.
 
 ### Required Abstractions/Utilities
+
 - **Authentication:** API key (from env/config), secure handling
 - **Context support:** All requests accept `context.Context`
 - **Error handling:** Centralized, idiomatic Go error types
@@ -149,10 +154,12 @@ There are two primary ways to authenticate to the Canvus server:
    - If password authentication is enabled, the server issues a temporary access token (valid for 24 hours).
    - This token is used for subsequent authenticated requests.
    - Example:
+
      ```json
      POST /users/login
      { "email": "alice@example.com", "password": "BBBB" }
      ```
+
    - Response includes a `token` and user info.
 
 2. **Access Token**
@@ -168,6 +175,7 @@ There are two primary ways to authenticate to the Canvus server:
 ### SDK Client Authentication Options
 
 The Go SDK client supports three authentication options:
+
 1. Username/password login (temporary token)
 2. Static access token (long-lived)
 3. Token validation/refresh (prolongs token lifetime)
@@ -196,6 +204,7 @@ The SDK must support three primary client instantiation patterns:
    - No automatic cleanup or user/token creation.
 
 **Notes:**
+
 - The terms "API key" and "PrivateToken" are used interchangeably; all authentication headers use `Private-Token`.
 - Session cleanup for temporary tokens is handled by calling `/users/logout`.
 
@@ -210,12 +219,14 @@ The SDK must support three primary client instantiation patterns:
 - No Linux commands or assumptions.
 
 **2024-06-12 Progress Update:**
+
 - Refactored `doRequest` to support query parameters for HTTP requests.
 - Updated `ListCanvases` and `GetCanvas` to accept and encode options as query parameters.
 - Implemented binary response handling for `GetCanvasPreview`.
 - Next: Add or update unit tests for Canvas methods, especially `GetCanvasPreview`.
 
 **2024-06-14 Progress Update:**
+
 - Implemented DeleteFolder method in Go SDK.
 - Added integration test for folder creation and deletion.
 - Verified folder is removed from ListFolders after deletion.
