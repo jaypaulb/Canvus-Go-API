@@ -54,7 +54,7 @@ For each missing endpoint/feature:
 1. **System Management Endpoints**
     - [x] Users: implement and test all actions
     - [x] Access Tokens: implement and test all actions
-    - [ ] Groups: implement and test all actions
+    - [x] Groups: implement and test all actions
     - [ ] Canvas Folders: implement and test all actions
     - [ ] Server Config: implement and test all actions
     - [ ] License: implement (do not test activation)
