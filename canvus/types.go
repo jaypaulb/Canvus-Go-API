@@ -67,11 +67,6 @@ type AuditEvent struct {
 	// ... other fields
 }
 
-type LicenseInfo struct {
-	Key string
-	// ... other fields
-}
-
 type MipmapInfo struct {
 	Hash string
 	// ... other fields
