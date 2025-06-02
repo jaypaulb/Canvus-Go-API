@@ -92,10 +92,6 @@ type Workspace struct {
 	// ... other fields
 }
 
-type ServerConfig struct {
-	// ... fields
-}
-
 type ServerInfo struct {
 	// ... fields
 }

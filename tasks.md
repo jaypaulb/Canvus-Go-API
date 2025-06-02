@@ -56,7 +56,7 @@ For each missing endpoint/feature:
     - [x] Access Tokens: implement and test all actions
     - [x] Groups: implement and test all actions
     - [x] Canvas Folders: implement and test all actions
-    - [ ] Server Config: implement and test all actions
+    - [x] Server Config: implement and test all actions
     - [ ] License: implement (do not test activation)
     - [ ] Audit Log: implement and test all actions
     - [ ] Server Info: implement and test all actions

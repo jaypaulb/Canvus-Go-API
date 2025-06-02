@@ -1,1 +1,81 @@
 package canvus
+
+import (
+	"context"
+	"fmt"
+)
+
+// ServerConfig represents the server configuration.
+type ServerConfig struct {
+	Access         string                `json:"access,omitempty"`
+	Authentication *AuthenticationConfig `json:"authentication,omitempty"`
+	Email          *EmailConfig          `json:"email,omitempty"`
+	ExternalURL    string                `json:"external_url,omitempty"`
+	ServerName     string                `json:"server_name,omitempty"`
+}
+
+type AuthenticationConfig struct {
+	DomainAllowList      []string        `json:"domain_allow_list,omitempty"`
+	Password             *PasswordConfig `json:"password,omitempty"`
+	QRCode               *QRCodeConfig   `json:"qr_code,omitempty"`
+	RequireAdminApproval bool            `json:"require_admin_approval,omitempty"`
+	SAML                 *SAMLConfig     `json:"saml,omitempty"`
+}
+
+type PasswordConfig struct {
+	Enabled       bool `json:"enabled,omitempty"`
+	SignUpEnabled bool `json:"sign_up_enabled,omitempty"`
+}
+
+type QRCodeConfig struct {
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+type SAMLConfig struct {
+	ACSURL             string `json:"acs_url,omitempty"`
+	Enabled            bool   `json:"enabled,omitempty"`
+	IDPCertFingerPrint string `json:"idp_cert_finger_print,omitempty"`
+	IDPEntityID        string `json:"idp_entity_id,omitempty"`
+	IDPTargetURL       string `json:"idp_target_url,omitempty"`
+	NameIDFormat       string `json:"name_id_format,omitempty"`
+	SignUpEnabled      bool   `json:"sign_up_enabled,omitempty"`
+	SPEntityID         string `json:"sp_entity_id,omitempty"`
+}
+
+type EmailConfig struct {
+	MailReplyToAddress              string `json:"mail_reply_to_address,omitempty"`
+	MailReplyToName                 string `json:"mail_reply_to_name,omitempty"`
+	MailSenderAddress               string `json:"mail_sender_address,omitempty"`
+	MailSenderName                  string `json:"mail_sender_name,omitempty"`
+	SMTPAllowSelfSignedCertificates bool   `json:"smtp_allow_self_signed_certificates,omitempty"`
+	SMTPHost                        string `json:"smtp_host,omitempty"`
+	SMTPPassword                    string `json:"smtp_password,omitempty"`
+	SMTPPort                        int    `json:"smtp_port,omitempty"`
+	SMTPSecurity                    string `json:"smtp_security,omitempty"`
+	SMTPUsername                    string `json:"smtp_username,omitempty"`
+}
+
+// GetServerConfig retrieves the server configuration.
+func (c *Client) GetServerConfig(ctx context.Context) (*ServerConfig, error) {
+	var config ServerConfig
+	err := c.doRequest(ctx, "GET", "server-config", nil, &config, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("GetServerConfig: %w", err)
+	}
+	return &config, nil
+}
+
+// UpdateServerConfig updates the server configuration.
+func (c *Client) UpdateServerConfig(ctx context.Context, req ServerConfig) (*ServerConfig, error) {
+	var config ServerConfig
+	err := c.doRequest(ctx, "PATCH", "server-config", req, &config, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateServerConfig: %w", err)
+	}
+	return &config, nil
+}
+
+// SendTestEmail sends a test email to the current user.
+func (c *Client) SendTestEmail(ctx context.Context) error {
+	return c.doRequest(ctx, "POST", "server-config/send-test-email", nil, nil, nil, false)
+}
