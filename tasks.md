@@ -55,7 +55,7 @@ For each missing endpoint/feature:
     - [x] Users: implement and test all actions
     - [x] Access Tokens: implement and test all actions
     - [x] Groups: implement and test all actions
-    - [ ] Canvas Folders: implement and test all actions
+    - [x] Canvas Folders: implement and test all actions
     - [ ] Server Config: implement and test all actions
     - [ ] License: implement (do not test activation)
     - [ ] Audit Log: implement and test all actions
@@ -88,20 +88,6 @@ For each missing endpoint/feature:
 - **Documentation:** Godoc, README, code samples
 - **Testing:** Unit/integration tests for all features
 
-#### Current Focus: Go API Library Expansion (Canvases & Folders Resource)
-- [x] Stub method signatures for all Canvas endpoints in `canvases.go`
-- [x] Implement HTTP logic for Canvas methods
-- [x] Add query parameter support for Canvas methods (ListCanvases, GetCanvas)
-- [x] Implement binary response handling for `GetCanvasPreview`
-- [x] Add error handling and authentication to Canvas methods
-- [x] Write unit/integration tests for Canvas methods (live, non-destructive)
-- [x] Document Canvas methods with GoDoc and usage examples
-- [x] Implement and test Folder endpoints: create, list, nested create, move canvas
-- [x] All tests use unique names and only clean up resources they create
-- [x] Canvas preview test logs expected limitation (preview not available until opened in CanvusClient app)
-- [x] Canvas renaming works, but server may override name (logs actual result)
-- [x] Implement and test folder deletion (if API supports)
-- [ ] Add more advanced/edge-case tests as needed
 
 ### 5. Build the Go SDK
 

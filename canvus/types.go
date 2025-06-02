@@ -7,13 +7,6 @@ type Canvas struct {
 	// ... other fields
 }
 
-type Folder struct {
-	ID       string
-	Name     string
-	ParentID string `json:"folder_id,omitempty"`
-	// ... other fields
-}
-
 type Note struct {
 	ID   string
 	Text string
