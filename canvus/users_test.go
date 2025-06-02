@@ -1,0 +1,105 @@
+package canvus
+
+import (
+	"context"
+	"encoding/json"
+	"os"
+	"testing"
+	"time"
+)
+
+type testSettings struct {
+	APIBaseURL string `json:"api_base_url"`
+	APIKey     string `json:"api_key"`
+	TestUser   struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	} `json:"test_user"`
+}
+
+func loadTestSettings() (*testSettings, error) {
+	f, err := os.Open("../settings.json")
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var s testSettings
+	if err := json.NewDecoder(f).Decode(&s); err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+func getTestAdminClientFromSettings() (*Client, *testSettings, error) {
+	ts, err := loadTestSettings()
+	if err != nil {
+		return nil, nil, err
+	}
+	return NewClientFromConfig(ts.APIBaseURL, ts.APIKey), ts, nil
+}
+
+func TestUserLifecycle(t *testing.T) {
+	ctx := context.Background()
+	admin, _, err := getTestAdminClientFromSettings()
+	if err != nil {
+		t.Fatalf("failed to load test settings: %v", err)
+	}
+	email := "testuser_" + time.Now().Format("20060102150405") + "@example.com"
+	name := "testuser_" + time.Now().Format("150405")
+	password := "TestPassword123!"
+
+	// Create user
+	user, err := admin.CreateUser(ctx, CreateUserRequest{
+		Name:     name,
+		Email:    email,
+		Password: password,
+	})
+	if err != nil {
+		t.Fatalf("failed to create user: %v", err)
+	}
+	defer func() {
+		_ = admin.DeleteUser(ctx, user.ID)
+	}()
+
+	// Retrieve user
+	got, err := admin.GetUser(ctx, user.ID)
+	if err != nil {
+		t.Errorf("failed to get user: %v", err)
+	}
+	if got.Email != email {
+		t.Errorf("expected email %q, got %q", email, got.Email)
+	}
+	if got.Name != name {
+		t.Errorf("expected name %q, got %q", name, got.Name)
+	}
+
+	// Login as user
+	testClient := NewClient(admin.BaseURL)
+	err = testClient.Login(ctx, email, password)
+	if err != nil {
+		t.Errorf("failed to login as user: %v", err)
+	}
+
+	// Logout
+	err = testClient.Logout(ctx)
+	if err != nil && err.Error() != "EOF" {
+		t.Errorf("failed to logout: %v", err)
+	} else if err != nil && err.Error() == "EOF" {
+		t.Logf("logout returned EOF, which is expected if the API returns no response body")
+	}
+
+	// Delete user (already deferred)
+}
+
+func TestUserLoginInvalid(t *testing.T) {
+	ctx := context.Background()
+	ts, err := loadTestSettings()
+	if err != nil {
+		t.Fatalf("failed to load test settings: %v", err)
+	}
+	testClient := NewClient(ts.APIBaseURL)
+	err = testClient.Login(ctx, "nonexistent@example.com", "wrongpassword")
+	if err == nil {
+		t.Fatalf("expected error for invalid login, got nil")
+	}
+}

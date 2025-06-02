@@ -8,6 +8,14 @@ The Canvases API operates on canvases on the server.
 
 Canvus 3.1 introduced shared links. If enabled, this feature allows unauthenticated access to a canvas without providing an access token for API requests.
 
+The shared links have a defined format:
+{serverAddress}/open/{canvasId}
+
+https://example.com/open/0cb6639f-042b-42a3-9e97-74818d2fb09d
+
+canvus+ssl://ise2025.canvusmultisite.com/cedff5c2-d6ae-4d71-ae13-d9d8b5fb4f6f
+
+
 If a canvas has `link_permission` attribute equal to `edit` or `view`, the `Private-Token` header in the API requests may be omitted. In this case, the regular permission checks are ignored and access to the canvas is granted as Guest user with `edit` or `view` permission correspondingly. If the Guest user is blocked on the server, this unauthenticated access will not be available.
 
 A valid `Private-Token` may be given as usual when accessing a canvas with a shared link. In this case the user associated with the token is used to access the canvas, but the effective permission granted is at least as allowed by the `link_permission` attribute.

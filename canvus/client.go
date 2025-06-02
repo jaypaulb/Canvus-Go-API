@@ -183,3 +183,8 @@ func (c *Client) Logout(ctx context.Context) error {
 	c.authenticator = nil
 	return nil
 }
+
+// Users provides access to user management methods.
+func (c *Client) Users() *Client {
+	return c
+}

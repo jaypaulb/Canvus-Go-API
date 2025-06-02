@@ -100,7 +100,7 @@ For each missing endpoint/feature:
 - [x] All tests use unique names and only clean up resources they create
 - [x] Canvas preview test logs expected limitation (preview not available until opened in CanvusClient app)
 - [x] Canvas renaming works, but server may override name (logs actual result)
-- [ ] Implement and test folder deletion (if API supports)
+- [x] Implement and test folder deletion (if API supports)
 - [ ] Add more advanced/edge-case tests as needed
 
 ### 5. Build the Go SDK
@@ -153,6 +153,68 @@ For each missing endpoint/feature:
 
 ---
 
+## Authentication Methods (SDK & API)
+
+There are two primary ways to authenticate to the Canvus server:
+
+1. **Username/Password Login**
+   - Endpoint: `POST /users/login`
+   - The client sends a username (email) and password to the endpoint.
+   - If password authentication is enabled, the server issues a temporary access token (valid for 24 hours).
+   - This token is used for subsequent authenticated requests.
+   - Example:
+     ```json
+     POST /users/login
+     { "email": "alice@example.com", "password": "BBBB" }
+     ```
+   - Response includes a `token` and user info.
+
+2. **Access Token**
+   - Endpoint: `POST /access-tokens` (or via Canvus web UI)
+   - An access token is created via the API or UI.
+   - This token does **not expire** and can be used directly for authentication by including it in the `Private-Token` header.
+   - You can also POST an existing token to `/users/login` to validate and prolong its lifetime.
+
+3. **Sign Out**
+   - Endpoint: `POST /users/logout`
+   - Invalidates the provided access token. If no token is provided in the body, the `Private-Token` header is used.
+
+### SDK Client Authentication Options
+
+The Go SDK client supports three authentication options:
+1. Username/password login (temporary token)
+2. Static access token (long-lived)
+3. Token validation/refresh (prolongs token lifetime)
+
+All authentication logic must be tested for both login and static token flows.
+
+---
+
+## Client Instantiation & Authentication Patterns
+
+The SDK must support three primary client instantiation patterns:
+
+1. **test_client**
+   - Uses the main client (from settings) to create and activate a new test user.
+   - Logs in as the test user to obtain a temporary token (API key/PrivateToken) via `/users/login`.
+   - All actions in the session use this token (sent as `Private-Token` header).
+   - On completion, logs out (`/users/logout`, invalidates token) and deletes the test user.
+
+2. **user_client**
+   - Logs in as an existing user (by email and password) to obtain a temporary token via `/users/login`.
+   - All actions use this token for the session (sent as `Private-Token` header).
+   - On completion, logs out to invalidate the token.
+
+3. **client**
+   - Uses credentials from the settings/config file for all actions.
+   - No automatic cleanup or user/token creation.
+
+**Notes:**
+- The terms "API key" and "PrivateToken" are used interchangeably; all authentication headers use `Private-Token`.
+- Session cleanup for temporary tokens is handled by calling `/users/logout`.
+
+---
+
 ## Ongoing Practices
 
 - **Update this file with every new plan or after each major prompt cycle.**
@@ -167,10 +229,7 @@ For each missing endpoint/feature:
 - Implemented binary response handling for `GetCanvasPreview`.
 - Next: Add or update unit tests for Canvas methods, especially `GetCanvasPreview`.
 
-**2024-06-__ Progress Update:**
-- All major Canvas and Folder endpoints are now covered by live, non-destructive integration tests.
-- Preview test logs expected limitation; not a failure unless preview is available.
-- Canvas renaming works, but server may override the name (not a test failure).
-- Folder and canvas creation, listing, moving, copying, and permissions are all tested and passing.
-- All tests are non-destructive and clean up after themselves.
-- Next: Implement folder deletion (if supported) and expand edge-case coverage as needed.
+**2024-06-14 Progress Update:**
+- Implemented DeleteFolder method in Go SDK.
+- Added integration test for folder creation and deletion.
+- Verified folder is removed from ListFolders after deletion.

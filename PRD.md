@@ -70,6 +70,36 @@ The following order must be followed for endpoint implementation and testing, to
 4. **Widget & Asset Endpoints**: All widget and asset actions, in dependency order (simple elements first, then those requiring files or references, then read-only endpoints)
 5. **Parenting**: Implement but do not test parenting (patching parent ID)
 
+---
+
+### Test Execution Order
+
+To ensure reliable, isolated, and maintainable test runs, tests must be executed in the following order, matching the development and implementation sequence:
+
+1. **System Management Tests**
+    - Users
+    - Access Tokens
+    - Groups
+    - Canvas Folders
+    - Server Config
+    - License (no activation tests)
+    - Audit Log
+    - Server Info
+2. **Canvas Tests**
+    - All Canvas actions (CRUD, move, copy, permissions, etc.)
+3. **Client & Workspace Tests**
+    - All Client actions
+    - All Workspace actions
+    - MT-Canvus-Client launch and workspace state verification
+4. **Widget & Asset Tests**
+    - All Widget actions (Notes, Anchors, VideoInputs, VideoOutputs, Color Presets, etc.)
+    - All Asset actions (Images, Videos, PDFs, Uploads, Connectors, Backgrounds, MipMaps, Assets, etc.)
+    - All read-only endpoints (Widgets, Annotations)
+5. **Parenting**
+    - Implement but do not test parenting (patching parent ID)
+
+This order must be followed for both development and CI test execution to avoid resource conflicts and ensure proper cleanup.
+
 ### 3.5. Subscription & Buffering Requirements
 
 - For endpoints supporting subscriptions (with `?subscription`), the SDK must:
@@ -151,6 +181,48 @@ The following order must be followed for endpoint implementation and testing, to
 
 ---
 
+## Authentication (API & SDK)
+
+The Canvus API and SDK support two main authentication flows:
+
+### 1. Username/Password Login
+- Endpoint: `POST /users/login`
+- The client sends an email and password to the endpoint.
+- If password authentication is enabled, the server issues a temporary access token (valid for 24 hours).
+- Example request:
+  ```json
+  POST /users/login
+  { "email": "alice@example.com", "password": "BBBB" }
+  ```
+- Example response:
+  ```json
+  {
+    "token": "...",
+    "user": { ... }
+  }
+  ```
+
+### 2. Access Token
+- Endpoint: `POST /access-tokens` (or via Canvus web UI)
+- An access token is created via the API or UI.
+- This token does **not expire** and can be used directly for authentication by including it in the `Private-Token` header.
+- You can also POST an existing token to `/users/login` to validate and prolong its lifetime.
+
+### 3. Sign Out
+- Endpoint: `POST /users/logout`
+- Invalidates the provided access token. If no token is provided in the body, the `Private-Token` header is used.
+
+### SDK Client Authentication Options
+
+The Go SDK client supports three authentication options:
+1. Username/password login (temporary token)
+2. Static access token (long-lived)
+3. Token validation/refresh (prolongs token lifetime)
+
+The SDK must allow the user to choose their preferred authentication method at initialization.
+
+---
+
 ## SDK Abstractions & Utilities
 
 See [Abstractions.md](./Abstractions.md) for a detailed description of planned SDK abstractions, utilities, and advanced features.
@@ -158,3 +230,52 @@ See [Abstractions.md](./Abstractions.md) for a detailed description of planned S
 ## MCS API Feature Requests
 
 See [MCS-Feature-Requests.md](./MCS-Feature-Requests.md) for proposed improvements and suggestions for the MCS API.
+
+---
+
+## Client Instantiation & Authentication Patterns
+
+The SDK must support three primary client instantiation patterns:
+
+1. **test_client**
+   - Uses the main client (from settings) to create and activate a new test user.
+   - Logs in as the test user to obtain a temporary token (API key/PrivateToken) via `/users/login`.
+   - All actions in the session use this token (sent as `Private-Token` header).
+   - On completion, logs out (`/users/logout`, invalidates token) and deletes the test user.
+
+2. **user_client**
+   - Logs in as an existing user (by email and password) to obtain a temporary token via `/users/login`.
+   - All actions use this token for the session (sent as `Private-Token` header).
+   - On completion, logs out to invalidate the token.
+
+3. **client**
+   - Uses credentials from the settings/config file for all actions.
+   - No automatic cleanup or user/token creation.
+
+**Notes:**
+- The terms "API key" and "PrivateToken" are used interchangeably; all authentication headers use `Private-Token`.
+- Session cleanup for temporary tokens is handled by calling `/users/logout`.
+
+---
+
+## Go SDK Type Definition Approach
+
+- **Resource-specific types** (e.g., ClientInfo, AccessToken, User) are defined in their respective files (e.g., clients.go, accesstokens.go, users.go).
+- **Only truly shared types** (used by multiple resources/packages) are kept in types.go.
+- This approach ensures modularity, maintainability, and idiomatic Go design, and avoids type redeclaration errors.
+
+---
+
+## Configuration Management Approach
+
+- The SDK and all tests use `settings.json` (not .env or environment variables) for configuration.
+- `settings.json` must include:
+  - `api_base_url`: The full base URL for the Canvus API (including protocol, e.g., https://...)
+  - `api_key`: The admin or test API key
+  - `test_user`: An object with `username` and `password` for test user flows
+  - Any other required settings (timeouts, enabled features, etc.)
+- **Environment variables are not the source of truth for configuration.**
+- All test and client code should read from `settings.json` for configuration values.
+- This approach ensures consistency, avoids missing/empty variable errors, and is Windows/PowerShell friendly.
+
+---

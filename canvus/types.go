@@ -8,8 +8,9 @@ type Canvas struct {
 }
 
 type Folder struct {
-	ID   string
-	Name string
+	ID       string
+	Name     string
+	ParentID string `json:"folder_id,omitempty"`
 	// ... other fields
 }
 
@@ -68,12 +69,6 @@ type ColorPreset struct {
 	// ... other fields
 }
 
-type ClientInfo struct {
-	ID   string
-	Name string
-	// ... other fields
-}
-
 type Group struct {
 	ID   string
 	Name string
@@ -106,11 +101,6 @@ type VideoOutput struct {
 }
 
 type Workspace struct {
-	ID string
-	// ... other fields
-}
-
-type AccessToken struct {
 	ID string
 	// ... other fields
 }
