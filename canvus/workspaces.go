@@ -1,1 +1,200 @@
 package canvus
+
+import (
+	"context"
+	"errors"
+	"fmt"
+)
+
+// WorkspaceWidgetGetter allows getting a widget by ID for workspace viewport logic.
+type WorkspaceWidgetGetter interface {
+	GetWidget(ctx context.Context, clientID string, widgetID string) (*Widget, error)
+}
+
+// resolveWorkspaceIndex resolves a workspace index from a WorkspaceSelector.
+func (c *Client) resolveWorkspaceIndex(ctx context.Context, clientID string, selector WorkspaceSelector) (int, error) {
+	if selector.Index != nil {
+		return *selector.Index, nil
+	}
+	workspaces, err := c.ListWorkspaces(ctx, clientID)
+	if err != nil {
+		return 0, err
+	}
+	if selector.Name != nil {
+		for _, ws := range workspaces {
+			if ws.WorkspaceName == *selector.Name {
+				return ws.Index, nil
+			}
+		}
+		return 0, fmt.Errorf("workspace with name %q not found", *selector.Name)
+	}
+	if selector.User != nil {
+		for _, ws := range workspaces {
+			if ws.User == *selector.User {
+				return ws.Index, nil
+			}
+		}
+		return 0, fmt.Errorf("workspace for user %q not found", *selector.User)
+	}
+	// Default to index 0
+	return 0, nil
+}
+
+// ListWorkspaces retrieves all workspaces for a client.
+func (c *Client) ListWorkspaces(ctx context.Context, clientID string) ([]Workspace, error) {
+	var workspaces []Workspace
+	endpoint := fmt.Sprintf("clients/%s/workspaces", clientID)
+	err := c.doRequest(ctx, "GET", endpoint, nil, &workspaces, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("ListWorkspaces: %w", err)
+	}
+	return workspaces, nil
+}
+
+// GetWorkspace retrieves a single workspace by index.
+func (c *Client) GetWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector) (*Workspace, error) {
+	idx, err := c.resolveWorkspaceIndex(ctx, clientID, selector)
+	if err != nil {
+		return nil, err
+	}
+	var ws Workspace
+	endpoint := fmt.Sprintf("clients/%s/workspaces/%d", clientID, idx)
+	err = c.doRequest(ctx, "GET", endpoint, nil, &ws, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("GetWorkspace: %w", err)
+	}
+	return &ws, nil
+}
+
+// UpdateWorkspace updates workspace parameters.
+func (c *Client) UpdateWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector, req UpdateWorkspaceRequest) (*Workspace, error) {
+	idx, err := c.resolveWorkspaceIndex(ctx, clientID, selector)
+	if err != nil {
+		return nil, err
+	}
+	var ws Workspace
+	endpoint := fmt.Sprintf("clients/%s/workspaces/%d", clientID, idx)
+	err = c.doRequest(ctx, "PATCH", endpoint, req, &ws, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateWorkspace: %w", err)
+	}
+	return &ws, nil
+}
+
+// ToggleWorkspaceInfoPanel toggles the info_panel_visible state.
+func (c *Client) ToggleWorkspaceInfoPanel(ctx context.Context, clientID string, selector WorkspaceSelector) error {
+	ws, err := c.GetWorkspace(ctx, clientID, selector)
+	if err != nil {
+		return err
+	}
+	newVal := !ws.InfoPanelVisible
+	_, err = c.UpdateWorkspace(ctx, clientID, selector, UpdateWorkspaceRequest{InfoPanelVisible: &newVal})
+	return err
+}
+
+// ToggleWorkspacePinned toggles the pinned state.
+func (c *Client) ToggleWorkspacePinned(ctx context.Context, clientID string, selector WorkspaceSelector) error {
+	ws, err := c.GetWorkspace(ctx, clientID, selector)
+	if err != nil {
+		return err
+	}
+	newVal := !ws.Pinned
+	_, err = c.UpdateWorkspace(ctx, clientID, selector, UpdateWorkspaceRequest{Pinned: &newVal})
+	return err
+}
+
+// SetWorkspaceViewport sets the workspace viewport by coordinates or widget.
+func SetWorkspaceViewport(ctx context.Context, client WorkspaceWidgetGetter, apiClient *Client, clientID string, selector WorkspaceSelector, opts SetViewportOptions) error {
+	var rect *Rectangle
+	if opts.WidgetID != nil {
+		widget, err := client.GetWidget(ctx, clientID, *opts.WidgetID)
+		if err != nil {
+			return err
+		}
+		margin := opts.Margin
+		if margin == 0 {
+			margin = 20 // default margin
+		}
+		rect = &Rectangle{
+			X:      widget.Location.X - margin,
+			Y:      widget.Location.Y - margin,
+			Width:  widget.Size.Width + 2*margin,
+			Height: widget.Size.Height + 2*margin,
+		}
+	} else if opts.X != nil && opts.Y != nil && opts.Width != nil && opts.Height != nil {
+		rect = &Rectangle{
+			X:      *opts.X,
+			Y:      *opts.Y,
+			Width:  *opts.Width,
+			Height: *opts.Height,
+		}
+	} else {
+		return errors.New("must provide either WidgetID or all of X, Y, Width, Height")
+	}
+	_, err := apiClient.UpdateWorkspace(ctx, clientID, selector, UpdateWorkspaceRequest{ViewRectangle: rect})
+	return err
+}
+
+// OpenCanvasOnWorkspace opens a canvas and optionally centers viewport.
+func (c *Client) OpenCanvasOnWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector, opts OpenCanvasOptions) error {
+	idx, err := c.resolveWorkspaceIndex(ctx, clientID, selector)
+	if err != nil {
+		return err
+	}
+	endpoint := fmt.Sprintf("clients/%s/workspaces/%d/open-canvas", clientID, idx)
+	payload := map[string]interface{}{
+		"canvas_id": opts.CanvasID,
+	}
+	if opts.ServerID != "" {
+		payload["server_id"] = opts.ServerID
+	}
+	if opts.UserEmail != "" {
+		payload["user_email"] = opts.UserEmail
+	}
+	// Get workspace before
+	before, err := c.GetWorkspace(ctx, clientID, selector)
+	if err != nil {
+		return err
+	}
+	// Open canvas
+	err = c.doRequest(ctx, "POST", endpoint, payload, nil, nil, false)
+	if err != nil {
+		return fmt.Errorf("OpenCanvasOnWorkspace: %w", err)
+	}
+	// Get workspace after
+	after, err := c.GetWorkspace(ctx, clientID, selector)
+	if err != nil {
+		return err
+	}
+	if before.CanvasID == after.CanvasID {
+		return errors.New("canvas did not change after open-canvas")
+	}
+	// Optionally set viewport
+	if opts.CenterX != nil && opts.CenterY != nil {
+		ws, err := c.GetWorkspace(ctx, clientID, selector)
+		if err != nil {
+			return err
+		}
+		rect := &Rectangle{
+			X:      *opts.CenterX,
+			Y:      *opts.CenterY,
+			Width:  ws.Size.Width,
+			Height: ws.Size.Height,
+		}
+		_, err = c.UpdateWorkspace(ctx, clientID, selector, UpdateWorkspaceRequest{ViewRectangle: rect})
+		if err != nil {
+			return fmt.Errorf("OpenCanvasOnWorkspace: failed to set viewport: %w", err)
+		}
+	} else if opts.WidgetID != nil {
+		err := SetWorkspaceViewport(ctx, c, c, clientID, selector, SetViewportOptions{WidgetID: opts.WidgetID})
+		if err != nil {
+			return fmt.Errorf("OpenCanvasOnWorkspace: failed to center on widget: %w", err)
+		}
+	}
+	return nil
+}
+
+// Placeholder for GetWidget (to be implemented)
+func (c *Client) GetWidget(ctx context.Context, clientID string, widgetID string) (*Widget, error) {
+	return nil, errors.New("GetWidget not implemented")
+}

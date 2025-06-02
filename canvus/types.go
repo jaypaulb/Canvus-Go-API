@@ -40,8 +40,10 @@ type Video struct {
 }
 
 type Widget struct {
-	ID   string
-	Type string
+	ID       string `json:"id"`
+	Type     string `json:"type"`
+	Location *Point `json:"location,omitempty"`
+	Size     *Size  `json:"size,omitempty"`
 	// ... other fields
 }
 
@@ -86,8 +88,73 @@ type VideoOutput struct {
 }
 
 type Workspace struct {
-	ID string
-	// ... other fields
+	CanvasID         string     `json:"canvas_id"`
+	CanvasSize       *Size      `json:"canvas_size,omitempty"`
+	Index            int        `json:"index"`
+	InfoPanelVisible bool       `json:"info_panel_visible"`
+	Location         *Point     `json:"location,omitempty"`
+	Pinned           bool       `json:"pinned"`
+	ServerID         string     `json:"server_id"`
+	Size             *Size      `json:"size,omitempty"`
+	State            string     `json:"state"`
+	User             string     `json:"user"`
+	ViewRectangle    *Rectangle `json:"view_rectangle,omitempty"`
+	WorkspaceName    string     `json:"workspace_name"`
+	WorkspaceState   string     `json:"workspace_state"`
+}
+
+type Size struct {
+	Height float64 `json:"height"`
+	Width  float64 `json:"width"`
+}
+
+type Point struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+type Rectangle struct {
+	X      float64 `json:"x"`
+	Y      float64 `json:"y"`
+	Width  float64 `json:"width"`
+	Height float64 `json:"height"`
+}
+
+type WorkspaceSelector struct {
+	Index *int
+	Name  *string
+	User  *string
+}
+
+type Viewport struct {
+	X      float64
+	Y      float64
+	Width  float64
+	Height float64
+}
+
+type SetViewportOptions struct {
+	WidgetID *string
+	X        *float64
+	Y        *float64
+	Width    *float64
+	Height   *float64
+	Margin   float64
+}
+
+type OpenCanvasOptions struct {
+	CanvasID  string
+	ServerID  string
+	UserEmail string
+	CenterX   *float64
+	CenterY   *float64
+	WidgetID  *string
+}
+
+type UpdateWorkspaceRequest struct {
+	InfoPanelVisible *bool      `json:"info_panel_visible,omitempty"`
+	Pinned           *bool      `json:"pinned,omitempty"`
+	ViewRectangle    *Rectangle `json:"view_rectangle,omitempty"`
 }
 
 // Permissions represents access permissions for a resource.

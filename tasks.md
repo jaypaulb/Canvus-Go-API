@@ -236,3 +236,11 @@ The SDK must support three primary client instantiation patterns:
 - Expanded `Canvas` struct and added all request/response types for Canvas API.
 - Implemented all Canvas API methods in `canvases.go` (CRUD, move, copy, permissions, preview, demo state, etc.).
 - Next: Add and run comprehensive tests for Canvas lifecycle and error cases in `canvases_test.go`.
+
+- [x] Implement all workspace abstractions and functions:
+    - [x] Flexible workspace selection (index, name, user, default)
+    - [x] List/Get/Update workspace
+    - [x] Toggle info panel and pinned state
+    - [x] Set viewport (by coords)
+    - [ ] Set viewport (by widget) [TODO: pending widget endpoint]
+    - [ ] Open canvas (with optional viewport centering) [TODO: pending widget/endpoint]
