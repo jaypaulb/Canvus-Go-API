@@ -143,4 +143,33 @@ filter := &canvus.Filter{Criteria: map[string]interface{}{
 widgets, err := session.ListWidgets(ctx, canvasID, filter)
 ```
 
+## Widget Search Across All Canvases
+
+You can search for widgets matching a query across all canvases using `FindWidgetsAcrossCanvases`. This utility supports exact, wildcard, prefix/suffix, and partial (contains) string matches, as well as nested field selectors.
+
+### Example: Find All Browser Widgets with URL Suffix
+
+```go
+query := map[string]interface{}{
+    "widget_type": "browser",
+    "url": "*12345", // matches any url ending with 12345
+}
+matches, err := canvus.FindWidgetsAcrossCanvases(ctx, session, query)
+if err != nil {
+    // handle error
+}
+for _, m := range matches {
+    fmt.Println(m.CanvasID, m.WidgetID, m.Widget.WidgetType)
+}
+```
+
+### Wildcard and Partial Match Support
+- `"*"` matches any value
+- `"abc*"` matches values starting with `abc`
+- `"*123"` matches values ending with `123`
+- `"*mid*"` matches values containing `mid`
+
+### Nested Field Selectors
+- Use JSONPath-like keys (e.g., `"$.location.x"`) to match nested fields.
+
 --- 

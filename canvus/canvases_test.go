@@ -41,7 +41,7 @@ func TestCanvasLifecycle(t *testing.T) {
 
 	// List canvases and check the new canvas is present
 	t.Logf("[ListCanvases] Listing all canvases")
-	canvases, err := session.ListCanvases(ctx)
+	canvases, err := session.ListCanvases(ctx, nil)
 	if err != nil {
 		t.Errorf("failed to list canvases: %v", err)
 	}

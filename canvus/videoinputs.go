@@ -5,6 +5,12 @@ import (
 	"fmt"
 )
 
+// VideoInputSource represents a video input source for a client device.
+type VideoInputSource struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // ListVideoInputs retrieves all video input widgets for a given canvas.
 func (s *Session) ListVideoInputs(ctx context.Context, canvasID string) ([]VideoInput, error) {
 	var inputs []VideoInput

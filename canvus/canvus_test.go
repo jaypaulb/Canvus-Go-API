@@ -142,7 +142,7 @@ func TestWidgetAndAssetEndpoints(t *testing.T) {
 
 	// --- WIDGETS: List and Get ---
 	fmt.Printf("[%s] WIDGETS: ListWidgets\n", time.Now().Format(time.RFC3339Nano))
-	widgets, err := session.ListWidgets(ctx, canvas.ID)
+	widgets, err := session.ListWidgets(ctx, canvas.ID, nil)
 	if err != nil {
 		fmt.Printf("[%s] ListWidgets failed: %v\n", time.Now().Format(time.RFC3339Nano), err)
 	} else {

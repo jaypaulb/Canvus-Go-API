@@ -5,14 +5,17 @@ import (
 	"fmt"
 )
 
-// ListWidgets retrieves all widgets for a given canvas.
+// ListWidgets retrieves all widgets for a given canvas. If filter is non-nil, results are filtered client-side.
 // This endpoint is read-only: POST, PATCH, DELETE are not supported on /canvases/{id}/widgets.
-func (s *Session) ListWidgets(ctx context.Context, canvasID string) ([]Widget, error) {
+func (s *Session) ListWidgets(ctx context.Context, canvasID string, filter *Filter) ([]Widget, error) {
 	var widgets []Widget
 	path := fmt.Sprintf("canvases/%s/widgets", canvasID)
 	err := s.doRequest(ctx, "GET", path, nil, &widgets, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("ListWidgets: %w", err)
+	}
+	if filter != nil {
+		widgets = FilterSlice(widgets, filter)
 	}
 	return widgets, nil
 }
@@ -68,14 +71,41 @@ func (s *Session) PatchParentID(ctx context.Context, canvasID, widgetID, parentI
 	return &widget, nil
 }
 
-// ListAnnotations retrieves all annotations for a given canvas.
-// This endpoint is read-only: only GET is supported on /canvases/{id}/annotations.
-func (s *Session) ListAnnotations(ctx context.Context, canvasID string) ([]Annotation, error) {
-	var annotations []Annotation
-	path := fmt.Sprintf("canvases/%s/annotations", canvasID)
-	err := s.doRequest(ctx, "GET", path, nil, &annotations, nil, false)
+// WidgetMatch represents a widget match result across canvases.
+type WidgetMatch struct {
+	CanvasID string
+	WidgetID string
+	Widget   Widget
+}
+
+// WidgetsLister defines the interface for listing canvases and widgets.
+type WidgetsLister interface {
+	ListCanvases(ctx context.Context, filter *Filter) ([]Canvas, error)
+	ListWidgets(ctx context.Context, canvasID string, filter *Filter) ([]Widget, error)
+}
+
+// FindWidgetsAcrossCanvases searches all canvases for widgets matching the given query.
+// The query supports exact, wildcard, and partial string matches (see Filter abstraction).
+// Returns a slice of WidgetMatch with CanvasID, WidgetID, and the Widget itself.
+func FindWidgetsAcrossCanvases(ctx context.Context, lister WidgetsLister, query map[string]interface{}) ([]WidgetMatch, error) {
+	canvases, err := lister.ListCanvases(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("ListAnnotations: %w", err)
+		return nil, fmt.Errorf("FindWidgetsAcrossCanvases: failed to list canvases: %w", err)
 	}
-	return annotations, nil
+	filter := &Filter{Criteria: query}
+	var matches []WidgetMatch
+	for _, canvas := range canvases {
+		widgets, err := lister.ListWidgets(ctx, canvas.ID, filter)
+		if err != nil {
+			return nil, fmt.Errorf("FindWidgetsAcrossCanvases: failed to list widgets for canvas %s: %w", canvas.ID, err)
+		}
+		for _, w := range widgets {
+			matches = append(matches, WidgetMatch{
+				CanvasID: canvas.ID,
+				WidgetID: w.ID,
+				Widget:   w,
+			})
+		}
+	}
+	return matches, nil
 }

@@ -2,8 +2,110 @@
 package canvus
 
 import (
+	"strings"
 	"time"
 )
+
+// Filter provides generic, client-side filtering for SDK list/get endpoints.
+// It supports arbitrary JSON criteria, wildcards ("*"), and JSONPath-like selectors ("$").
+type Filter struct {
+	Criteria map[string]interface{} // Arbitrary filter criteria
+}
+
+// Filterable is an interface for types that can be filtered by Filter.
+type Filterable interface {
+	// AsMap returns the object as a map for filtering.
+	AsMap() map[string]interface{}
+}
+
+// getByJSONPath retrieves a value from a nested map using a JSONPath-like selector (e.g., $.foo.bar).
+func getByJSONPath(obj map[string]interface{}, path string) (interface{}, bool) {
+	if len(path) < 2 || path[:2] != "$." {
+		return nil, false
+	}
+	parts := make([]string, 0)
+	for _, p := range path[2:] {
+		if p == '.' {
+			continue
+		}
+		parts = append(parts, string(p))
+	}
+	// Actually, split by '.'
+	parts = splitJSONPath(path[2:])
+	cur := obj
+	for i, part := range parts {
+		if i == len(parts)-1 {
+			if v, ok := cur[part]; ok {
+				return v, true
+			}
+			return nil, false
+		}
+		if next, ok := cur[part].(map[string]interface{}); ok {
+			cur = next
+		} else {
+			return nil, false
+		}
+	}
+	return nil, false
+}
+
+// splitJSONPath splits a JSONPath-like string (e.g., foo.bar.baz) into parts.
+func splitJSONPath(path string) []string {
+	return strings.Split(path, ".")
+}
+
+// Match returns true if the given object matches the filter criteria.
+// Supports wildcards ("*"), prefix/suffix wildcards (e.g., "*123", "abc*"), and JSONPath-like selectors ("$.field").
+func (f *Filter) Match(obj map[string]interface{}) bool {
+	for k, v := range f.Criteria {
+		var actual interface{}
+		var ok bool
+		if len(k) > 1 && k[:2] == "$." {
+			actual, ok = getByJSONPath(obj, k)
+		} else {
+			actual, ok = obj[k], true
+		}
+		if !ok {
+			return false
+		}
+		if v == "*" {
+			continue // wildcard matches any value
+		}
+		// Support prefix/suffix wildcards for strings
+		vs, vIsStr := v.(string)
+		as, aIsStr := actual.(string)
+		if vIsStr && aIsStr {
+			if strings.HasPrefix(vs, "*") && strings.HasSuffix(vs, "*") {
+				// Contains
+				needle := vs[1 : len(vs)-1]
+				if !strings.Contains(as, needle) {
+					return false
+				}
+				continue
+			}
+			if strings.HasPrefix(vs, "*") {
+				// Suffix match
+				needle := vs[1:]
+				if !strings.HasSuffix(as, needle) {
+					return false
+				}
+				continue
+			}
+			if strings.HasSuffix(vs, "*") {
+				// Prefix match
+				needle := vs[:len(vs)-1]
+				if !strings.HasPrefix(as, needle) {
+					return false
+				}
+				continue
+			}
+		}
+		if actual != v {
+			return false
+		}
+	}
+	return true
+}
 
 // Canvas represents a canvas resource in the Canvus system.
 type Canvas struct {
@@ -307,4 +409,56 @@ type CanvasGroupPermission struct {
 
 // Asset represents a generic asset in the Canvus system.
 type Asset struct {
-	ID    string `json:"id"`
+	ID string `json:"id"`
+}
+
+// AsMap returns the Canvas as a map[string]interface{} for filtering.
+func (c Canvas) AsMap() map[string]interface{} {
+	return map[string]interface{}{
+		"id":           c.ID,
+		"name":         c.Name,
+		"access":       c.Access,
+		"asset_size":   c.AssetSize,
+		"created_at":   c.CreatedAt,
+		"folder_id":    c.FolderID,
+		"in_trash":     c.InTrash,
+		"mode":         c.Mode,
+		"modified_at":  c.ModifiedAt,
+		"preview_hash": c.PreviewHash,
+		"state":        c.State,
+	}
+}
+
+// AsMap returns the Widget as a map[string]interface{} for filtering.
+func (w Widget) AsMap() map[string]interface{} {
+	m := map[string]interface{}{
+		"id":          w.ID,
+		"widget_type": w.WidgetType,
+		"parent_id":   w.ParentID,
+		"pinned":      w.Pinned,
+		"scale":       w.Scale,
+		"state":       w.State,
+		"depth":       w.Depth,
+	}
+	if w.Location != nil {
+		m["location"] = map[string]interface{}{"x": w.Location.X, "y": w.Location.Y}
+	}
+	if w.Size != nil {
+		m["size"] = map[string]interface{}{"width": w.Size.Width, "height": w.Size.Height}
+	}
+	return m
+}
+
+// FilterSlice returns a new slice containing only the elements that match the filter.
+func FilterSlice[T Filterable](elems []T, filter *Filter) []T {
+	if filter == nil {
+		return elems
+	}
+	var out []T
+	for _, elem := range elems {
+		if filter.Match(elem.AsMap()) {
+			out = append(out, elem)
+		}
+	}
+	return out
+}
