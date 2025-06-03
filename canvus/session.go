@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -83,7 +84,7 @@ func NewSession(baseURL string, opts ...SessionOption) *Session {
 // doRequest is a helper for making HTTP requests to the Canvus API.
 // queryParams is an optional map of query parameters to append to the URL.
 // If rawResponse is true, the response body is returned as []byte in 'out' (must be *[]byte).
-func (s *Session) doRequest(ctx context.Context, method, endpoint string, body interface{}, out interface{}, queryParams map[string]string, rawResponse bool) error {
+func (s *Session) doRequest(ctx context.Context, method, endpoint string, body interface{}, out interface{}, queryParams map[string]string, rawResponse bool, contentType ...string) error {
 	u, err := url.Parse(s.BaseURL)
 	if err != nil {
 		return err
@@ -100,12 +101,23 @@ func (s *Session) doRequest(ctx context.Context, method, endpoint string, body i
 	}
 
 	var reqBody io.Reader
+	var ct string
 	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			return err
+		if rdr, ok := body.(io.Reader); ok {
+			reqBody = rdr
+			if len(contentType) > 0 {
+				ct = contentType[0]
+			} else {
+				ct = "application/octet-stream"
+			}
+		} else {
+			b, err := json.Marshal(body)
+			if err != nil {
+				return err
+			}
+			reqBody = bytes.NewReader(b)
+			ct = "application/json"
 		}
-		reqBody = bytes.NewReader(b)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), reqBody)
@@ -116,7 +128,13 @@ func (s *Session) doRequest(ctx context.Context, method, endpoint string, body i
 		s.authenticator.Authenticate(req)
 	}
 	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Type", ct)
+	}
+
+	// DEBUG: Log headers and URL for troubleshooting
+	fmt.Printf("[DEBUG] %s %s\n", method, u.String())
+	for k, v := range req.Header {
+		fmt.Printf("[DEBUG] Header: %s: %v\n", k, v)
 	}
 
 	resp, err := s.HTTPClient.Do(req)
@@ -149,6 +167,120 @@ func (s *Session) doRequest(ctx context.Context, method, endpoint string, body i
 		}
 	}
 	return nil
+}
+
+// doRequestWithHeaders is like doRequest but allows passing custom headers for the request.
+// queryParams may be map[string]string or map[string]interface{}; all values will be stringified.
+func (s *Session) doRequestWithHeaders(ctx context.Context, method, endpoint string, body interface{}, out interface{}, queryParams interface{}, headers map[string]string, rawResponse bool) error {
+	u, err := url.Parse(s.BaseURL)
+	if err != nil {
+		return err
+	}
+	u.Path = path.Join(u.Path, endpoint)
+
+	// Convert queryParams to map[string]string if needed
+	qp := make(map[string]string)
+	switch params := queryParams.(type) {
+	case map[string]string:
+		qp = params
+	case map[string]interface{}:
+		for k, v := range params {
+			qp[k] = toString(v)
+		}
+	case nil:
+		// no params
+	default:
+		return errors.New("queryParams must be map[string]string or map[string]interface{} or nil")
+	}
+
+	if len(qp) > 0 {
+		q := u.Query()
+		for k, v := range qp {
+			q.Set(k, v)
+		}
+		u.RawQuery = q.Encode()
+	}
+
+	var reqBody io.Reader
+	if body != nil {
+		b, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		reqBody = bytes.NewReader(b)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), reqBody)
+	if err != nil {
+		return err
+	}
+	if s.authenticator != nil {
+		s.authenticator.Authenticate(req)
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	// Add custom headers
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
+	// DEBUG: Log headers and URL for troubleshooting
+	fmt.Printf("[DEBUG] %s %s\n", method, u.String())
+	for k, v := range req.Header {
+		fmt.Printf("[DEBUG] Header: %s: %v\n", k, v)
+	}
+
+	resp, err := s.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		b, _ := io.ReadAll(resp.Body)
+		return &APIError{StatusCode: resp.StatusCode, Message: string(b)}
+	}
+
+	if out != nil {
+		if rawResponse {
+			// out must be *[]byte
+			b, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			if ptr, ok := out.(*[]byte); ok {
+				*ptr = b
+			} else {
+				return errors.New("out must be *[]byte when rawResponse is true")
+			}
+		} else {
+			if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// toString converts an interface{} to string for query param values.
+func toString(v interface{}) string {
+	switch val := v.(type) {
+	case string:
+		return val
+	case fmt.Stringer:
+		return val.String()
+	case int, int8, int16, int32, int64:
+		return fmt.Sprintf("%d", val)
+	case uint, uint8, uint16, uint32, uint64:
+		return fmt.Sprintf("%d", val)
+	case float32, float64:
+		return fmt.Sprintf("%v", val)
+	case bool:
+		return fmt.Sprintf("%t", val)
+	default:
+		return fmt.Sprintf("%v", val)
+	}
 }
 
 // Login authenticates a user and stores the returned token and user ID for future requests.

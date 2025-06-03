@@ -2,41 +2,9 @@ package canvus
 
 import (
 	"context"
-	"encoding/json"
-	"os"
 	"testing"
 	"time"
 )
-
-type testSettings struct {
-	APIBaseURL string `json:"api_base_url"`
-	APIKey     string `json:"api_key"`
-	TestUser   struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	} `json:"test_user"`
-}
-
-func loadTestSettings() (*testSettings, error) {
-	f, err := os.Open("../settings.json")
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	var s testSettings
-	if err := json.NewDecoder(f).Decode(&s); err != nil {
-		return nil, err
-	}
-	return &s, nil
-}
-
-func getTestAdminClientFromSettings() (*Session, *testSettings, error) {
-	ts, err := loadTestSettings()
-	if err != nil {
-		return nil, nil, err
-	}
-	return NewSessionFromConfig(ts.APIBaseURL, ts.APIKey), ts, nil
-}
 
 func TestUserLifecycle(t *testing.T) {
 	ctx := context.Background()

@@ -139,7 +139,11 @@ func NewTestClient(ctx context.Context, adminSession *Session, baseURL, testEmai
 // Cleanup logs out and deletes the test user.
 func (tc *TestClient) Cleanup(ctx context.Context) error {
 	if tc.cleanupFunc != nil {
-		return tc.cleanupFunc(ctx)
+		err := tc.cleanupFunc(ctx)
+		if err != nil {
+			fmt.Printf("[CLEANUP ERROR] TestClient cleanup failed for %s: %v\n", tc.email, err)
+		}
+		return err
 	}
 	return nil
 }
@@ -164,7 +168,11 @@ func NewUserClient(ctx context.Context, baseURL, email, password string) (*UserC
 // Cleanup logs out and invalidates the token.
 func (uc *UserClient) Cleanup(ctx context.Context) error {
 	if uc.cleanupFunc != nil {
-		return uc.cleanupFunc(ctx)
+		err := uc.cleanupFunc(ctx)
+		if err != nil {
+			fmt.Printf("[CLEANUP ERROR] UserClient cleanup failed: %v\n", err)
+		}
+		return err
 	}
 	return nil
 }

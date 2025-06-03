@@ -20,15 +20,33 @@ type Canvas struct {
 }
 
 type Note struct {
-	ID   string
-	Text string
-	// ... other fields
+	ID              string  `json:"id"`
+	Text            string  `json:"text"`
+	Title           string  `json:"title"`
+	BackgroundColor string  `json:"background_color"`
+	Depth           int     `json:"depth"`
+	Location        *Point  `json:"location,omitempty"`
+	ParentID        string  `json:"parent_id"`
+	Pinned          bool    `json:"pinned"`
+	Scale           float64 `json:"scale"`
+	Size            *Size   `json:"size,omitempty"`
+	State           string  `json:"state"`
+	WidgetType      string  `json:"widget_type"`
 }
 
 type Image struct {
-	ID  string
-	URL string
-	// ... other fields
+	ID               string  `json:"id"`
+	Hash             string  `json:"hash"`
+	Title            string  `json:"title"`
+	OriginalFilename string  `json:"original_filename"`
+	ParentID         string  `json:"parent_id"`
+	Pinned           bool    `json:"pinned"`
+	Scale            float64 `json:"scale"`
+	Size             *Size   `json:"size,omitempty"`
+	Location         *Point  `json:"location,omitempty"`
+	State            string  `json:"state"`
+	WidgetType       string  `json:"widget_type"`
+	Depth            int     `json:"depth"`
 }
 
 type PDF struct {
@@ -44,16 +62,29 @@ type Video struct {
 }
 
 type Widget struct {
-	ID       string `json:"id"`
-	Type     string `json:"type"`
-	Location *Point `json:"location,omitempty"`
-	Size     *Size  `json:"size,omitempty"`
-	// ... other fields
+	ID         string  `json:"id"`
+	WidgetType string  `json:"widget_type"`
+	ParentID   string  `json:"parent_id"`
+	Location   *Point  `json:"location,omitempty"`
+	Size       *Size   `json:"size,omitempty"`
+	Pinned     bool    `json:"pinned"`
+	Scale      float64 `json:"scale"`
+	State      string  `json:"state"`
+	Depth      int     `json:"depth"`
 }
 
 type Anchor struct {
-	ID string
-	// ... other fields
+	ID          string  `json:"id"`
+	AnchorIndex int     `json:"anchor_index"`
+	AnchorName  string  `json:"anchor_name"`
+	ParentID    string  `json:"parent_id"`
+	Pinned      bool    `json:"pinned"`
+	Scale       float64 `json:"scale"`
+	Size        *Size   `json:"size,omitempty"`
+	Location    *Point  `json:"location,omitempty"`
+	State       string  `json:"state"`
+	WidgetType  string  `json:"widget_type"`
+	Depth       int     `json:"depth"`
 }
 
 type Browser struct {
@@ -62,8 +93,21 @@ type Browser struct {
 }
 
 type Connector struct {
-	ID string
-	// ... other fields
+	ID         string        `json:"id"`
+	Src        *ConnectorEnd `json:"src,omitempty"`
+	Dst        *ConnectorEnd `json:"dst,omitempty"`
+	LineColor  string        `json:"line_color"`
+	LineWidth  int           `json:"line_width"`
+	State      string        `json:"state"`
+	Type       string        `json:"type"`
+	WidgetType string        `json:"widget_type"`
+}
+
+type ConnectorEnd struct {
+	AutoLocation bool   `json:"auto_location"`
+	ID           string `json:"id"`
+	RelLocation  *Point `json:"rel_location,omitempty"`
+	Tip          string `json:"tip"`
 }
 
 type Background struct {
@@ -76,9 +120,22 @@ type ColorPreset struct {
 	// ... other fields
 }
 
+// ColorPresets represents the color presets for a canvas.
+type ColorPresets struct {
+	Annotation     []string `json:"annotation"`
+	Connector      []string `json:"connector"`
+	NoteBackground []string `json:"note_background"`
+	NoteText       []string `json:"note_text"`
+}
+
+// MipmapInfo represents mipmap information for an asset.
 type MipmapInfo struct {
-	Hash string
-	// ... other fields
+	Resolution struct {
+		Width  int `json:"width"`
+		Height int `json:"height"`
+	} `json:"resolution"`
+	MaxLevel int `json:"max_level"`
+	Pages    int `json:"pages"`
 }
 
 type VideoInput struct {
@@ -86,9 +143,17 @@ type VideoInput struct {
 	// ... other fields
 }
 
+// VideoOutput represents a video output channel on a client or canvas.
 type VideoOutput struct {
-	ID string
-	// ... other fields
+	Index      int    `json:"index,omitempty"`
+	Label      string `json:"label,omitempty"`
+	Source     string `json:"source,omitempty"`
+	Suspended  bool   `json:"suspended,omitempty"`
+	ID         string `json:"id,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Resolution *Size  `json:"resolution,omitempty"`
+	State      string `json:"state,omitempty"`
+	WidgetType string `json:"widget_type,omitempty"`
 }
 
 type Workspace struct {
@@ -194,6 +259,35 @@ type CanvasPermissions struct {
 	LinkPermission  string                  `json:"link_permission"`
 }
 
+// CanvasBackground represents the background settings for a canvas.
+type CanvasBackground struct {
+	Type            string           `json:"type"`
+	Haze            *HazeSettings    `json:"haze,omitempty"`
+	Grid            *GridSettings    `json:"grid,omitempty"`
+	Image           *BackgroundImage `json:"image,omitempty"`
+	BackgroundColor string           `json:"background_color,omitempty"`
+}
+
+// HazeSettings represents haze background settings.
+type HazeSettings struct {
+	Color1 string  `json:"color1"`
+	Color2 string  `json:"color2"`
+	Speed  float64 `json:"speed"`
+	Scale  float64 `json:"scale"`
+}
+
+// GridSettings represents grid overlay settings.
+type GridSettings struct {
+	Visible bool   `json:"visible"`
+	Color   string `json:"color"`
+}
+
+// BackgroundImage represents image background settings.
+type BackgroundImage struct {
+	Hash string `json:"hash"`
+	Fit  string `json:"fit"`
+}
+
 type CanvasUserPermission struct {
 	ID         int64  `json:"id"`
 	Permission string `json:"permission"`
@@ -204,4 +298,25 @@ type CanvasGroupPermission struct {
 	ID         int64  `json:"id"`
 	Permission string `json:"permission"`
 	Inherited  bool   `json:"inherited"`
+}
+
+type Asset struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
+	URL   string `json:"url,omitempty"`
+	// Add more fields as needed for specific asset types
+}
+
+type VideoInputSource struct {
+	Name       string `json:"name"`
+	Resolution *Size  `json:"resolution,omitempty"`
+	Source     string `json:"source"`
+}
+
+type Annotation struct {
+	ID         string `json:"id"`
+	Text       string `json:"text,omitempty"`
+	WidgetType string `json:"widget_type"`
+	// Add more fields as needed
 }

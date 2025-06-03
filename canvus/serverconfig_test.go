@@ -19,6 +19,13 @@ func TestServerConfigLifecycle(t *testing.T) {
 		t.Fatalf("failed to get server config: %v", err)
 	}
 
+	// Always restore original config, even if test fails
+	defer func() {
+		if _, err := admin.UpdateServerConfig(ctx, ServerConfig{ServerName: orig.ServerName}); err != nil {
+			t.Errorf("failed to restore original serverName: %v", err)
+		}
+	}()
+
 	// Update a value (e.g., server_name)
 	newName := "TestServer_" + time.Now().Format("150405")
 	update := ServerConfig{
@@ -29,11 +36,6 @@ func TestServerConfigLifecycle(t *testing.T) {
 		t.Errorf("failed to update server config: %v", err)
 	} else if updated.ServerName != newName {
 		t.Errorf("expected server_name %q, got %q", newName, updated.ServerName)
-	}
-
-	// Restore original config
-	if orig.ServerName != updated.ServerName {
-		_, _ = admin.UpdateServerConfig(ctx, ServerConfig{ServerName: orig.ServerName})
 	}
 
 	// Send test email (should not error, but may not be supported in all environments)

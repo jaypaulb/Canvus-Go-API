@@ -203,8 +203,3 @@ func (c *Session) OpenCanvasOnWorkspace(ctx context.Context, clientID string, se
 	}
 	return nil
 }
-
-// Placeholder for GetWidget (to be implemented)
-func (c *Session) GetWidget(ctx context.Context, clientID string, widgetID string) (*Widget, error) {
-	return nil, errors.New("GetWidget not implemented")
-}
