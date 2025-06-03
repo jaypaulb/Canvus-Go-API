@@ -89,6 +89,7 @@ func (c *Session) DeleteClient(ctx context.Context, id string) error {
 }
 
 // TestClient wraps a Session and manages a temporary test user and token.
+// TestClient is used in tests to create, login, and clean up a dedicated test user.
 type TestClient struct {
 	Session     *Session
 	userID      int64
@@ -98,6 +99,7 @@ type TestClient struct {
 }
 
 // UserClient wraps a Session and manages a temporary token for an existing user.
+// UserClient is used in tests to login as an existing user and clean up the session.
 type UserClient struct {
 	Session     *Session
 	cleanupFunc func(context.Context) error

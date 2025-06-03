@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Folder represents a canvas folder.
+// Folder represents a canvas folder in the Canvus system.
 type Folder struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
@@ -15,7 +15,7 @@ type Folder struct {
 	State    string `json:"state"`
 }
 
-// CreateFolderRequest is the payload for creating a folder.
+// CreateFolderRequest is the payload for creating a new folder.
 type CreateFolderRequest struct {
 	Name     string `json:"name,omitempty"`
 	ParentID string `json:"folder_id,omitempty"`
@@ -32,7 +32,7 @@ type MoveOrCopyFolderRequest struct {
 	Conflicts string `json:"conflicts,omitempty"`
 }
 
-// FolderPermissions represents permission overrides on a folder.
+// FolderPermissions represents permission overrides on a folder, including user and group permissions.
 type FolderPermissions struct {
 	EditorsCanShare bool                    `json:"editors_can_share"`
 	Users           []FolderUserPermission  `json:"users"`
@@ -51,7 +51,7 @@ type FolderGroupPermission struct {
 	Inherited  bool   `json:"inherited"`
 }
 
-// ListFolders retrieves all folders.
+// ListFolders retrieves all folders from the Canvus API.
 func (s *Session) ListFolders(ctx context.Context) ([]Folder, error) {
 	var folders []Folder
 	err := s.doRequest(ctx, "GET", "canvas-folders", nil, &folders, nil, false)
