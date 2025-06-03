@@ -95,4 +95,52 @@ Contributions are welcome! Please see `CONTRIBUTING.md` for guidelines.
 
 ## License
 
-MIT License. See LICENSE file. 
+MIT License. See LICENSE file.
+
+## Filtering (Client-Side)
+
+You can filter canvases and widgets client-side using the `Filter` abstraction. This allows for flexible, in-memory filtering after fetching results from the API.
+
+### Example: Filter Canvases by Name
+
+```go
+filter := &canvus.Filter{Criteria: map[string]interface{}{"name": "My Canvas"}}
+canvases, err := session.ListCanvases(ctx, filter)
+if err != nil {
+    // handle error
+}
+for _, c := range canvases {
+    fmt.Println(c.ID, c.Name)
+}
+```
+
+### Example: Filter Widgets by Type and Parent
+
+```go
+filter := &canvus.Filter{Criteria: map[string]interface{}{
+    "widget_type": "note",
+    "parent_id":   "parent123",
+}}
+widgets, err := session.ListWidgets(ctx, canvasID, filter)
+if err != nil {
+    // handle error
+}
+for _, w := range widgets {
+    fmt.Println(w.ID, w.WidgetType, w.ParentID)
+}
+```
+
+### Advanced: Wildcards and JSONPath-like Selectors
+
+- Use `"*"` as a value to match any value for a field.
+- Use `"$.location.x"` to match nested fields (e.g., widgets with a specific X coordinate).
+
+```go
+filter := &canvus.Filter{Criteria: map[string]interface{}{
+    "widget_type": "*", // any widget type
+    "$.location.x": 100.0, // widgets at x=100
+}}
+widgets, err := session.ListWidgets(ctx, canvasID, filter)
+```
+
+--- 
