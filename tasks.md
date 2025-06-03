@@ -129,6 +129,23 @@ For each missing endpoint/feature:
 - [ ] Finalize documentation and examples
 - [ ] Tag and release initial version
 
+### 7. Advanced Abstractions & Utilities (from Abstractions.md)
+
+> The following advanced abstractions/utilities are required for full parity with the design in Abstractions.md. Work will proceed through these in order. (2024-06-16)
+
+- [ ] **Generic Filtering Abstraction**
+    - Implement a reusable, client-side filtering struct supporting arbitrary JSON, wildcards, and JSONPath-like selectors for all list/get endpoints.
+- [ ] **Connector Creation with Widget Spawning**
+    - Enhance CreateConnector to support widget creation as part of connector creation.
+- [ ] **Recursive Widget Search (findWidget/findWidgetIn)**
+    - Implement recursive search utilities for widgets using arbitrary JSON queries and selectors.
+- [ ] **Response Validation & Retry Logic**
+    - Add centralized response validation and retry logic for mismatches and transient errors.
+- [ ] **Geometry Utilities (contains, touches)**
+    - Add utilities to determine widget containment and overlap within a canvas.
+- [ ] **Batch Operations Utility**
+    - Implement batch move/copy/migrate/delete/pin/unpin with concurrency, partial failure logging, and retry logic.
+
 ---
 
 ## 2024-06-11: Greenfield Go SDK Approach & Planning
@@ -214,87 +231,4 @@ The SDK must support three primary client instantiation patterns:
 1. **test_client**
    - Uses the main client (from settings) to create and activate a new test user.
    - Logs in as the test user to obtain a temporary token (API key/PrivateToken) via `/users/login`.
-   - All actions in the session use this token (sent as `Private-Token` header).
-   - On completion, logs out (`/users/logout`, invalidates token) and deletes the test user.
-
-2. **user_client**
-   - Logs in as an existing user (by email and password) to obtain a temporary token via `/users/login`.
-   - All actions use this token for the session (sent as `Private-Token` header).
-   - On completion, logs out to invalidate the token.
-
-3. **client**
-   - Uses credentials from the settings/config file for all actions.
-   - No automatic cleanup or user/token creation.
-
-**Notes:**
-
-- The terms "API key" and "PrivateToken" are used interchangeably; all authentication headers use `Private-Token`.
-- Session cleanup for temporary tokens is handled by calling `/users/logout`.
-
----
-
-## Ongoing Practices
-
-- **Update this file with every new plan or after each major prompt cycle.**
-- **Before every git commit, summarize what was done in this file.**
-- Use feature branches for new work; merge via pull requests.
-- All development and commands must be Windows/PowerShell compatible.
-- No Linux commands or assumptions.
-
-**2024-06-12 Progress Update:**
-
-- Refactored `doRequest` to support query parameters for HTTP requests.
-- Updated `ListCanvases` and `GetCanvas` to accept and encode options as query parameters.
-- Implemented binary response handling for `GetCanvasPreview`.
-- Next: Add or update unit tests for Canvas methods, especially `GetCanvasPreview`.
-
-**2024-06-14 Progress Update:**
-
-- Implemented DeleteFolder method in Go SDK.
-- Added integration test for folder creation and deletion.
-- Verified folder is removed from ListFolders after deletion.
-
-**2024-06-15 Progress Update:**
-
-- Expanded `Canvas` struct and added all request/response types for Canvas API.
-- Implemented all Canvas API methods in `canvases.go` (CRUD, move, copy, permissions, preview, demo state, etc.).
-- Next: Add and run comprehensive tests for Canvas lifecycle and error cases in `canvases_test.go`.
-
-- [x] Implement all workspace abstractions and functions:
-    - [x] Flexible workspace selection (index, name, user, default)
-    - [x] List/Get/Update workspace
-    - [x] Toggle info panel and pinned state
-    - [x] Set viewport (by coords)
-    - [ ] (Optional) Set viewport by widget, Open canvas with viewport centering [Now possible, revisit if desired]
-- [x] Refactor: Rename Client struct and all related code to Session to avoid confusion with API clients (BREAKING CHANGE)
-
-**2024-06-15 Summary:**
-- Completed Client-to-Session refactor across all code and tests.
-- All tests pass. Ready to proceed to the next endpoints.
-
-### Unit/Integration Testing Plan (2024-06-15)
-
-- **Test Setup:**
-    1. Create a test folder.
-    2. Create a test canvas in that folder.
-    3. Create widgets/assets in that canvas as needed for each test.
-    4. For client-dependent endpoints, call `GetClients` first; if no client is present, skip the test and log a note to the console.
-- **Test Cleanup:**
-    - Delete the test canvas and then the test folder, ensuring all created resources are removed even if a test fails.
-- **Test Concurrency:**
-    - Use a single test file (e.g., `canvus_test.go`) and `t.Parallel()` for subtests to maximize concurrency and avoid collisions.
-- **Test Exclusions:**
-    - Do **not** test PATCHing `parent_id` (parenting) due to a known server bug.
-    - Do **not** test create/update/delete for the read-only widgets endpoint; only List/Get are supported.
-- **Test Cases:**
-    - Happy path, edge cases, and failure cases for each resource, excluding parent_id patching and read-only widgets endpoint mutations.
-- **Authentication:**
-    - Use a valid test user/session for all API calls. Test both valid and invalid authentication where appropriate.
-- **Documentation:**
-    - Comment each test with its purpose and any exclusions (e.g., "parent_id patching not tested due to server bug").
-
-**2024-06-15 Integration Test Coverage Update:**
-
-- All widget and asset endpoints (CRUD, partial, custom, and widgets GET) are now fully covered by robust, sequential integration tests with cleanup and logging.
-- All workspace abstractions are implemented and tested except widget-centric viewport (optional, revisit if needed).
-- Next: Finalize documentation, godoc, README, and prepare for initial release. Optionally, revisit widget-centric viewport and parenting/annotations if/when supported by the API.
+   - All actions in the session use this token (sent as `
