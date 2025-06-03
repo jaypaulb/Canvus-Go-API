@@ -1,0 +1,98 @@
+# Canvus Go SDK
+
+A modern, idiomatic Go SDK for the Canvus API. Provides full access to all Canvus endpoints, strong typing, authentication, and developer-friendly abstractions.
+
+## Features
+- Full API coverage: system, canvas, workspace, widget, and asset endpoints
+- Strongly typed request/response models
+- Modular, idiomatic Go design
+- Authentication (API key, login, token refresh)
+- Context support for all requests
+- Centralized error handling
+- Pagination and streaming helpers
+- Comprehensive tests and examples
+
+## Installation
+
+```
+go get github.com/jaypaulb/Canvus-Go-API/canvus
+```
+
+## Usage
+
+```go
+import (
+    "context"
+    "github.com/jaypaulb/Canvus-Go-API/canvus"
+)
+
+func main() {
+    // Create a new session using an API key
+    session := canvus.NewSession("https://your-canvus-server/api/v1", canvus.WithAPIKey("YOUR_API_KEY"))
+    ctx := context.Background()
+
+    // List canvases
+    canvases, err := session.ListCanvases(ctx)
+    if err != nil {
+        panic(err)
+    }
+    for _, c := range canvases {
+        println(c.ID, c.Name)
+    }
+}
+```
+
+## Authentication
+
+The SDK supports three authentication flows:
+- **API Key:** Use a static access token (recommended for most use cases)
+- **Username/Password:** Obtain a temporary token via login
+- **Token Refresh:** Prolong token lifetime via `/users/login`
+
+Example (login):
+```go
+session := canvus.NewSession("https://your-canvus-server/api/v1")
+err := session.Login(ctx, "user@example.com", "password")
+if err != nil {
+    // handle error
+}
+```
+
+## Examples
+
+- List folders:
+  ```go
+  folders, err := session.ListFolders(ctx)
+  // ...
+  ```
+- Create a canvas:
+  ```go
+  canvas, err := session.CreateCanvas(ctx, canvus.CreateCanvasRequest{Name: "My Canvas", FolderID: "..."})
+  // ...
+  ```
+- Error handling:
+  ```go
+  if err != nil {
+      if apiErr, ok := err.(*canvus.APIError); ok {
+          fmt.Println("API error:", apiErr.StatusCode, apiErr.Message)
+      } else {
+          fmt.Println("Other error:", err)
+      }
+  }
+  ```
+
+## Testing
+
+- All endpoints are covered by integration tests.
+- To run tests, configure `settings.json` with your server URL and credentials, then run:
+  ```
+  go test ./canvus/...
+  ```
+
+## Contributing
+
+Contributions are welcome! Please see `CONTRIBUTING.md` for guidelines.
+
+## License
+
+MIT License. See LICENSE file. 
