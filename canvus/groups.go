@@ -36,7 +36,7 @@ type Group struct {
 	Description string `json:"description,omitempty"`
 }
 
-// ListGroups retrieves all groups.
+// ListGroups retrieves all groups from the Canvus API.
 func (s *Session) ListGroups(ctx context.Context) ([]Group, error) {
 	var groups []Group
 	err := s.doRequest(ctx, "GET", "groups", nil, &groups, nil, false)
@@ -46,7 +46,7 @@ func (s *Session) ListGroups(ctx context.Context) ([]Group, error) {
 	return groups, nil
 }
 
-// GetGroup retrieves a single group by ID.
+// GetGroup retrieves a single group by ID from the Canvus API.
 func (s *Session) GetGroup(ctx context.Context, id int) (*Group, error) {
 	var group Group
 	path := fmt.Sprintf("groups/%d", id)
@@ -57,7 +57,7 @@ func (s *Session) GetGroup(ctx context.Context, id int) (*Group, error) {
 	return &group, nil
 }
 
-// CreateGroup creates a new group.
+// CreateGroup creates a new group in the Canvus API.
 func (s *Session) CreateGroup(ctx context.Context, req CreateGroupRequest) (*Group, error) {
 	var group Group
 	err := s.doRequest(ctx, "POST", "groups", req, &group, nil, false)
@@ -67,7 +67,7 @@ func (s *Session) CreateGroup(ctx context.Context, req CreateGroupRequest) (*Gro
 	return &group, nil
 }
 
-// DeleteGroup deletes a group by ID.
+// DeleteGroup deletes a group by ID in the Canvus API.
 func (s *Session) DeleteGroup(ctx context.Context, id int) error {
 	path := fmt.Sprintf("groups/%d", id)
 	return s.doRequest(ctx, "DELETE", path, nil, nil, nil, false)

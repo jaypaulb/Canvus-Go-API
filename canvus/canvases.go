@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// ListCanvases retrieves all canvases.
+// ListCanvases retrieves all canvases from the Canvus API.
 func (c *Session) ListCanvases(ctx context.Context) ([]Canvas, error) {
 	var canvases []Canvas
 	err := c.doRequest(ctx, "GET", "canvases", nil, &canvases, nil, false)
@@ -15,7 +15,7 @@ func (c *Session) ListCanvases(ctx context.Context) ([]Canvas, error) {
 	return canvases, nil
 }
 
-// GetCanvas retrieves a single canvas by ID.
+// GetCanvas retrieves a single canvas by ID from the Canvus API.
 func (c *Session) GetCanvas(ctx context.Context, id string) (*Canvas, error) {
 	var canvas Canvas
 	path := fmt.Sprintf("canvases/%s", id)
@@ -26,7 +26,7 @@ func (c *Session) GetCanvas(ctx context.Context, id string) (*Canvas, error) {
 	return &canvas, nil
 }
 
-// CreateCanvas creates a new canvas.
+// CreateCanvas creates a new canvas in the Canvus API.
 func (c *Session) CreateCanvas(ctx context.Context, req CreateCanvasRequest) (*Canvas, error) {
 	var canvas Canvas
 	err := c.doRequest(ctx, "POST", "canvases", req, &canvas, nil, false)
@@ -36,7 +36,7 @@ func (c *Session) CreateCanvas(ctx context.Context, req CreateCanvasRequest) (*C
 	return &canvas, nil
 }
 
-// UpdateCanvas renames or changes the mode of a canvas by ID.
+// UpdateCanvas renames or changes the mode of a canvas by ID in the Canvus API.
 func (c *Session) UpdateCanvas(ctx context.Context, id string, req UpdateCanvasRequest) (*Canvas, error) {
 	var canvas Canvas
 	path := fmt.Sprintf("canvases/%s", id)
@@ -47,7 +47,7 @@ func (c *Session) UpdateCanvas(ctx context.Context, id string, req UpdateCanvasR
 	return &canvas, nil
 }
 
-// DeleteCanvas permanently deletes a canvas by ID.
+// DeleteCanvas permanently deletes a canvas by ID in the Canvus API.
 func (c *Session) DeleteCanvas(ctx context.Context, id string) error {
 	path := fmt.Sprintf("canvases/%s", id)
 	return c.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
@@ -136,3 +136,13 @@ func (c *Session) SetCanvasPermissions(ctx context.Context, id string, perms Can
 	}
 	return &updated, nil
 }
+
+// Canvas represents a canvas resource in the Canvus system.
+
+// CreateCanvasRequest is the payload for creating a new canvas.
+
+// UpdateCanvasRequest is the payload for updating a canvas (rename, mode change).
+
+// MoveOrCopyCanvasRequest is the payload for moving or copying a canvas.
+
+// CanvasPermissions represents permission overrides on a canvas.

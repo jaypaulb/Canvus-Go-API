@@ -13,7 +13,7 @@ type ServerInfo struct {
 	Version  string   `json:"version"`
 }
 
-// GetServerInfo retrieves information about the Canvus Server instance.
+// GetServerInfo retrieves information about the Canvus Server instance from the Canvus API.
 func (s *Session) GetServerInfo(ctx context.Context) (*ServerInfo, error) {
 	var info ServerInfo
 	err := s.doRequest(ctx, "GET", "server-info", nil, &info, nil, false)

@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// AuditEvent represents an audit log event.
+// AuditEvent represents an audit log event in the Canvus system.
 type AuditEvent struct {
 	ID        json.Number `json:"id"`
 	Timestamp string      `json:"timestamp,omitempty"`
@@ -17,7 +17,7 @@ type AuditEvent struct {
 	// Add other fields as needed based on the API response
 }
 
-// ListAuditEvents retrieves audit log events with optional pagination and filtering.
+// ListAuditEvents retrieves audit log events with optional pagination and filtering from the Canvus API.
 func (s *Session) ListAuditEvents(ctx context.Context, opts *AuditLogOptions) ([]AuditEvent, error) {
 	var events []AuditEvent
 	query := map[string]string{}

@@ -18,7 +18,7 @@ type LicenseInfo struct {
 	// Add other fields as needed based on the API response
 }
 
-// GetLicenseInfo retrieves the current license information.
+// GetLicenseInfo retrieves the current license information from the Canvus API.
 func (s *Session) GetLicenseInfo(ctx context.Context) (*LicenseInfo, error) {
 	var info LicenseInfo
 	err := s.doRequest(ctx, "GET", "license", nil, &info, nil, false)

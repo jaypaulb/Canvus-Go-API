@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Canvas represents a canvas resource in the Canvus system.
 type Canvas struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -19,6 +20,7 @@ type Canvas struct {
 	State       string `json:"state"`
 }
 
+// Note represents a note widget in the Canvus system.
 type Note struct {
 	ID              string  `json:"id"`
 	Text            string  `json:"text"`
@@ -34,6 +36,7 @@ type Note struct {
 	WidgetType      string  `json:"widget_type"`
 }
 
+// Image represents an image widget in the Canvus system.
 type Image struct {
 	ID               string  `json:"id"`
 	Hash             string  `json:"hash"`
@@ -49,12 +52,14 @@ type Image struct {
 	Depth            int     `json:"depth"`
 }
 
+// PDF represents a PDF asset in the Canvus system.
 type PDF struct {
 	ID   string
 	Name string
 	// ... other fields
 }
 
+// Video represents a video asset in the Canvus system.
 type Video struct {
 	ID   string
 	Name string
@@ -300,23 +305,6 @@ type CanvasGroupPermission struct {
 	Inherited  bool   `json:"inherited"`
 }
 
+// Asset represents a generic asset in the Canvus system.
 type Asset struct {
 	ID    string `json:"id"`
-	Title string `json:"title"`
-	Type  string `json:"type"`
-	URL   string `json:"url,omitempty"`
-	// Add more fields as needed for specific asset types
-}
-
-type VideoInputSource struct {
-	Name       string `json:"name"`
-	Resolution *Size  `json:"resolution,omitempty"`
-	Source     string `json:"source"`
-}
-
-type Annotation struct {
-	ID         string `json:"id"`
-	Text       string `json:"text,omitempty"`
-	WidgetType string `json:"widget_type"`
-	// Add more fields as needed
-}
