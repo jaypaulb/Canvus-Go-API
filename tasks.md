@@ -141,8 +141,9 @@ For each missing endpoint/feature:
     - Implement recursive search utilities for widgets using arbitrary JSON queries and selectors.
 - [ ] **Response Validation & Retry Logic**
     - Add centralized response validation and retry logic for mismatches and transient errors.
-- [ ] **Geometry Utilities (contains, touches)**
+- [x] **Geometry Utilities (contains, touches)**
     - Add utilities to determine widget containment and overlap within a canvas.
+    - Implemented WidgetsContainId with explicit canvasID requirement and detailed documentation. Usage examples provided in godoc.
 - [ ] **Batch Operations Utility**
     - Implement batch move/copy/migrate/delete/pin/unpin with concurrency, partial failure logging, and retry logic.
 

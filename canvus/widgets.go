@@ -109,3 +109,71 @@ func FindWidgetsAcrossCanvases(ctx context.Context, lister WidgetsLister, query 
 	}
 	return matches, nil
 }
+
+// WidgetsContainId returns all widgets on the given canvas that are fully contained within the bounding box of the source widget (with optional tolerance).
+//
+// Parameters:
+//
+//	ctx      - context for cancellation and deadlines
+//	s        - the Session (API client)
+//	canvasID - the ID of the canvas containing the widgets
+//	widgetID - the ID of the source widget (if widget is nil)
+//	widget   - the full Widget struct (if available; if nil, widgetID is used to fetch it)
+//	tolerance- expands the bounding box by this amount in all directions (use 0 for exact)
+//
+// Behavior:
+//   - If widget is nil, the function fetches the widget using canvasID and widgetID.
+//   - If widget is provided, it is used directly.
+//   - All widgets on the same canvas are fetched.
+//   - Each widget (except the source) is checked to see if it is fully contained within the (optionally tolerance-expanded) bounding box of the source widget.
+//   - Returns a slice of all contained widgets.
+//
+// Example:
+//
+//	contained, err := canvus.WidgetsContainId(ctx, session, "canvas123", "widget456", nil, 0)
+//	// or, if you already have the widget:
+//	contained, err := canvus.WidgetsContainId(ctx, session, "canvas123", "", &myWidget, 5)
+func WidgetsContainId(ctx context.Context, s *Session, canvasID string, widgetID string, widget *Widget, tolerance float64) ([]Widget, error) {
+	var srcWidget Widget
+	if widget != nil {
+		srcWidget = *widget
+	} else {
+		if widgetID == "" {
+			return nil, fmt.Errorf("WidgetsContainId: widgetID must be provided if widget is nil")
+		}
+		w, err := s.GetWidget(ctx, canvasID, widgetID)
+		if err != nil {
+			return nil, fmt.Errorf("WidgetsContainId: failed to fetch widget: %w", err)
+		}
+		srcWidget = *w
+	}
+
+	// Fetch all widgets on the same canvas
+	widgets, err := s.ListWidgets(ctx, canvasID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("WidgetsContainId: failed to list widgets: %w", err)
+	}
+
+	srcRect := WidgetBoundingBox(srcWidget)
+	// Expand bounding box by tolerance
+	srcRect.X -= tolerance
+	srcRect.Y -= tolerance
+	srcRect.Width += 2 * tolerance
+	srcRect.Height += 2 * tolerance
+
+	var contained []Widget
+	for _, w := range widgets {
+		if w.ID == srcWidget.ID {
+			continue // skip self
+		}
+		if WidgetContainsRect(srcRect, w) {
+			contained = append(contained, w)
+		}
+	}
+	return contained, nil
+}
+
+// WidgetContainsRect returns true if the given rectangle fully contains the widget's bounding box.
+func WidgetContainsRect(rect Rectangle, w Widget) bool {
+	return Contains(rect, WidgetBoundingBox(w))
+}
