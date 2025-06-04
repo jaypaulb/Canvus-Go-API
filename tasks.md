@@ -49,7 +49,7 @@ For each missing endpoint/feature:
 - [x] Implement the method (for all endpoints below unless noted)
 - [x] Add error handling and authentication
 - [x] Write unit/integration tests for all endpoints (full CRUD, partial, and custom endpoints, including widgets GET, are now covered by robust integration tests)
-- [ ] Update documentation (godoc, README, code samples) (in progress)
+- [x] Update documentation (godoc, README, code samples) (Completed 2024-06-16: Full godoc audit, README, and code samples updated)
 
 #### Endpoint Implementation & Testing Order (2024-06-15)
 
@@ -117,7 +117,7 @@ For each missing endpoint/feature:
 
 ### 5. Build the Go SDK
 
-- [ ] Identify and design SDK utilities (CLI tools, helpers, etc.)
+- [ ] Identify and design SDK utilities (CLI tools, helpers, etc.) (Next focus as of 2024-06-16)
 - [ ] Implement SDK features
 - [ ] Add code samples and templates
 - [ ] Write comprehensive documentation

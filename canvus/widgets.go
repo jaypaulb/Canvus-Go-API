@@ -128,7 +128,7 @@ func FindWidgetsAcrossCanvases(ctx context.Context, lister WidgetsLister, query 
 //   - Each widget (except the source) is checked to see if it is fully contained within the (optionally tolerance-expanded) bounding box of the source widget.
 //   - Returns a slice of all contained widgets.
 //
-// Example:
+// Usage Example:
 //
 //	contained, err := canvus.WidgetsContainId(ctx, session, "canvas123", "widget456", nil, 0)
 //	// or, if you already have the widget:

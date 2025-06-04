@@ -450,6 +450,11 @@ func (w Widget) AsMap() map[string]interface{} {
 }
 
 // FilterSlice returns a new slice containing only the elements that match the filter.
+//
+// Usage Example:
+//
+//	filter := &canvus.Filter{Criteria: map[string]interface{}{"name": "My Canvas"}}
+//	filtered := canvus.FilterSlice(canvases, filter)
 func FilterSlice[T Filterable](elems []T, filter *Filter) []T {
 	if filter == nil {
 		return elems

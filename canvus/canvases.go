@@ -5,12 +5,15 @@ import (
 	"fmt"
 )
 
-// ListCanvases retrieves all canvases from the Canvus API.
-func (c *Session) ListCanvases(ctx context.Context) ([]Canvas, error) {
+// ListCanvases retrieves all canvases from the Canvus API. If filter is non-nil, results are filtered client-side.
+func (c *Session) ListCanvases(ctx context.Context, filter *Filter) ([]Canvas, error) {
 	var canvases []Canvas
 	err := c.doRequest(ctx, "GET", "canvases", nil, &canvases, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("ListCanvases: %w", err)
+	}
+	if filter != nil {
+		canvases = FilterSlice(canvases, filter)
 	}
 	return canvases, nil
 }

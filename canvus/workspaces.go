@@ -104,7 +104,25 @@ func (c *Session) ToggleWorkspacePinned(ctx context.Context, clientID string, se
 	return err
 }
 
-// SetWorkspaceViewport sets the workspace viewport by coordinates or widget.
+// SetWorkspaceViewport sets the workspace viewport for a client by coordinates or by centering on a widget.
+//
+// Parameters:
+//
+//	ctx      - context for cancellation and deadlines
+//	client   - a WorkspaceWidgetGetter (usually a Session) to fetch widgets
+//	apiClient- the Session (API client) to update the workspace
+//	clientID - the ID of the client whose workspace is being updated
+//	selector - WorkspaceSelector to identify the workspace (by index, name, or user)
+//	opts     - SetViewportOptions specifying either WidgetID (to center on a widget) or X, Y, Width, Height (to set explicit viewport)
+//
+// Returns an error if the operation fails.
+//
+// Usage Example:
+//
+//	err := canvus.SetWorkspaceViewport(ctx, session, session, "client123", canvus.WorkspaceSelector{Index: ptr(0)}, canvus.SetViewportOptions{WidgetID: ptr("widget456")})
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 func SetWorkspaceViewport(ctx context.Context, client WorkspaceWidgetGetter, apiClient *Session, clientID string, selector WorkspaceSelector, opts SetViewportOptions) error {
 	var rect *Rectangle
 	if opts.WidgetID != nil {
