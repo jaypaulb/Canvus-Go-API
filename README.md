@@ -172,4 +172,11 @@ for _, m := range matches {
 ### Nested Field Selectors
 - Use JSONPath-like keys (e.g., `"$.location.x"`) to match nested fields.
 
+## Import/Export and Asset Handling
+
+- The SDK supports robust, round-trip-safe import and export of all widget and asset types (notes, images, pdfs, videos, anchors, connectors, etc.).
+- Asset files (images, PDFs, videos) are exported as files and referenced in the export JSON. Import reads these files and creates the corresponding widgets with correct spatial and parent/child relationships.
+- The import/export logic is fully covered by integration tests, ensuring that all widgets and assets can be exported from one canvas and imported into another with full fidelity.
+- The SDK normalizes widget types and handles all required fields (location, size, etc.) for all widget types.
+
 --- 

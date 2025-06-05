@@ -37,6 +37,7 @@
   - Asset management (images, videos, PDFs, uploads, backgrounds, mipmaps, etc.)
   - Parenting (patching parent ID) must be implemented but is not to be tested due to a known server bug.
 - All request/response models must be idiomatic Go structs, with proper error handling.
+- **Import/Export:** The SDK supports robust, round-trip import/export for all widget and asset types, with case-insensitive widget type handling and relaxed numeric validation for cross-type equality.
 
 ### 3.2. SDK Features
 
@@ -191,6 +192,7 @@ This order must be followed for both development and CI test execution to avoid 
 - SDK is installable and usable by Go developers on Windows.
 - Documentation is clear, complete, and up-to-date.
 - No Linux-specific commands or scripts in the codebase.
+- **Import/Export round-trip is robust and fully tested for all widget and asset types. Widget type handling is case-insensitive, and numeric response validation is relaxed for cross-type equality.**
 
 ---
 

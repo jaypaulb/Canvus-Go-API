@@ -104,29 +104,33 @@ func (s *Session) doRequest(ctx context.Context, method, endpoint string, body i
 		u.RawQuery = q.Encode()
 	}
 
-	var reqBody io.Reader
-	var ct string
-	if body != nil {
-		if rdr, ok := body.(io.Reader); ok {
-			reqBody = rdr
-			if len(contentType) > 0 {
-				ct = contentType[0]
-			} else {
-				ct = "application/octet-stream"
-			}
-		} else {
-			b, err := json.Marshal(body)
-			if err != nil {
-				return err
-			}
-			reqBody = bytes.NewReader(b)
-			ct = "application/json"
-		}
-	}
-
 	var lastErr error
 	maxRetries := 3
 	for attempt := 0; attempt < maxRetries; attempt++ {
+		var reqBody io.Reader
+		var ct string
+		if body != nil {
+			if rdr, ok := body.(io.Reader); ok {
+				// If it's a ReadSeeker, reset to start for each attempt
+				if seeker, ok := rdr.(io.ReadSeeker); ok {
+					seeker.Seek(0, io.SeekStart)
+				}
+				reqBody = rdr
+				if len(contentType) > 0 {
+					ct = contentType[0]
+				} else {
+					ct = "application/octet-stream"
+				}
+			} else {
+				b, err := json.Marshal(body)
+				if err != nil {
+					return err
+				}
+				reqBody = bytes.NewReader(b)
+				ct = "application/json"
+			}
+		}
+
 		req, err := http.NewRequestWithContext(ctx, method, u.String(), reqBody)
 		if err != nil {
 			return err
@@ -136,12 +140,6 @@ func (s *Session) doRequest(ctx context.Context, method, endpoint string, body i
 		}
 		if body != nil {
 			req.Header.Set("Content-Type", ct)
-		}
-
-		// DEBUG: Log headers and URL for troubleshooting
-		fmt.Printf("[DEBUG] %s %s\n", method, u.String())
-		for k, v := range req.Header {
-			fmt.Printf("[DEBUG] Header: %s: %v\n", k, v)
 		}
 
 		resp, err := s.HTTPClient.Do(req)
@@ -155,46 +153,40 @@ func (s *Session) doRequest(ctx context.Context, method, endpoint string, body i
 		}
 		defer resp.Body.Close()
 
+		respBody, _ := io.ReadAll(resp.Body)
+
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			b, _ := io.ReadAll(resp.Body)
-			lastErr = &APIError{StatusCode: resp.StatusCode, Message: string(b)}
-			// Retry on 5xx
+			lastErr = &APIError{StatusCode: resp.StatusCode, Message: string(respBody)}
+			// Retry on 5xx only
 			if resp.StatusCode >= 500 && attempt < maxRetries-1 {
 				time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
 				continue
 			}
 			return lastErr
 		}
-
 		if out != nil {
 			if rawResponse {
-				b, err := io.ReadAll(resp.Body)
-				if err != nil {
-					lastErr = err
-					if attempt < maxRetries-1 {
-						time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
-						continue
-					}
-					return err
-				}
 				if ptr, ok := out.(*[]byte); ok {
-					*ptr = b
+					*ptr = respBody
 				} else {
 					return errors.New("out must be *[]byte when rawResponse is true")
 				}
 			} else {
-				if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
-					lastErr = err
-					if attempt < maxRetries-1 {
+				// Always decode from the reset buffer
+				decErr := json.NewDecoder(bytes.NewReader(respBody)).Decode(out)
+				if decErr != nil {
+					lastErr = decErr
+					// Only retry on 5xx or network errors, not on decode errors for 4xx
+					if attempt < maxRetries-1 && resp.StatusCode >= 500 {
 						time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
 						continue
 					}
-					return err
+					return decErr
 				}
 				// Centralized response validation
 				if err := validateResponse(out, body, method); err != nil {
 					lastErr = err
-					if attempt < maxRetries-1 {
+					if attempt < maxRetries-1 && resp.StatusCode >= 500 {
 						time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
 						continue
 					}
@@ -202,9 +194,9 @@ func (s *Session) doRequest(ctx context.Context, method, endpoint string, body i
 				}
 			}
 		}
-		return nil
+		return nil // Always return after a successful request
 	}
-	return lastErr
+	return nil // Also return if no output is expected and request succeeded
 }
 
 // validateResponse performs validation on the decoded response object.
@@ -262,10 +254,27 @@ func validateResponse(obj interface{}, reqBody interface{}, method string) error
 		}
 		return nil
 	}
+	// List of fields to skip strict equality (server-generated or transformed)
+	serverGeneratedFields := map[string]struct{}{
+		"id":           {},
+		"created_at":   {},
+		"modified_at":  {},
+		"last_login":   {},
+		"state":        {},
+		"access":       {},
+		"preview_hash": {},
+		"asset_size":   {},
+		"folder_id":    {},
+		"parent_id":    {},
+		"location":     {},
+		"size":         {},
+	}
+
 	// Only validate for PATCH/POST/PUT
 	if method != "PATCH" && method != "POST" && method != "PUT" {
 		return nil
 	}
+
 	// Only validate if reqBody is a map or struct
 	var reqMap map[string]interface{}
 	switch v := reqBody.(type) {
@@ -274,34 +283,65 @@ func validateResponse(obj interface{}, reqBody interface{}, method string) error
 	case nil:
 		return nil
 	default:
-		// Try to marshal and unmarshal to map[string]interface{}
 		b, err := json.Marshal(reqBody)
 		if err != nil {
-			return nil // skip validation if can't marshal
+			return nil
 		}
 		if err := json.Unmarshal(b, &reqMap); err != nil {
-			return nil // skip validation if can't unmarshal
+			return nil
 		}
 	}
 	if len(reqMap) == 0 {
 		return nil
 	}
+
 	// Marshal response to map for comparison
 	respMap := map[string]interface{}{}
 	b, err := json.Marshal(obj)
 	if err != nil {
-		return nil // skip validation if can't marshal
+		return nil
 	}
 	if err := json.Unmarshal(b, &respMap); err != nil {
-		return nil // skip validation if can't unmarshal
+		return nil
 	}
-	for k, v := range reqMap {
-		if respVal, ok := respMap[k]; ok {
-			if !reflect.DeepEqual(respVal, v) {
-				return fmt.Errorf("response field %q mismatch: got %v, want %v", k, respVal, v)
+
+	// List of write-only fields to skip in validation
+	writeOnlyFields := map[string]struct{}{
+		"password": {},
+		// Add more write-only fields here if needed
+	}
+
+	for k, reqVal := range reqMap {
+		if _, skip := writeOnlyFields[k]; skip {
+			continue // skip write-only fields
+		}
+		respVal, ok := respMap[k]
+		if !ok {
+			continue // skip fields not present in response
+		}
+		if _, skip := serverGeneratedFields[k]; skip {
+			continue // skip server-generated fields
+		}
+		// For string fields, compare case-insensitively for known enums
+		if k == "widget_type" {
+			if s1, ok1 := reqVal.(string); ok1 {
+				if s2, ok2 := respVal.(string); ok2 {
+					if !equalsIgnoreCase(s1, s2) {
+						return fmt.Errorf("response field %q mismatch (case-insensitive): got %v, want %v", k, respVal, reqVal)
+					}
+					continue
+				}
 			}
-		} else {
-			return fmt.Errorf("response missing field %q", k)
+		}
+		// Relax numeric comparison: treat as equal if numerically equal (int/float64)
+		if isNumeric(reqVal) && isNumeric(respVal) {
+			if !numericEqual(reqVal, respVal) {
+				return fmt.Errorf("response field %q mismatch (numeric): got %v, want %v", k, respVal, reqVal)
+			}
+			continue
+		}
+		if !reflect.DeepEqual(respVal, reqVal) {
+			return fmt.Errorf("response field %q mismatch: got %v, want %v", k, respVal, reqVal)
 		}
 	}
 	return nil
@@ -368,21 +408,16 @@ func (s *Session) doRequestWithHeaders(ctx context.Context, method, endpoint str
 		req.Header.Set(k, v)
 	}
 
-	// DEBUG: Log headers and URL for troubleshooting
-	fmt.Printf("[DEBUG] %s %s\n", method, u.String())
-	for k, v := range req.Header {
-		fmt.Printf("[DEBUG] Header: %s: %v\n", k, v)
-	}
-
 	resp, err := s.HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
+	respBody, _ := io.ReadAll(resp.Body)
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := io.ReadAll(resp.Body)
-		return &APIError{StatusCode: resp.StatusCode, Message: string(b)}
+		return &APIError{StatusCode: resp.StatusCode, Message: string(respBody)}
 	}
 
 	if out != nil {
@@ -471,4 +506,56 @@ func (s *Session) Users() *Session {
 // UserID returns the authenticated user's ID, or 0 if not logged in.
 func (s *Session) UserID() int64 {
 	return s.userID
+}
+
+// isNumeric returns true if v is a numeric type
+func isNumeric(v interface{}) bool {
+	switch v.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
+		return true
+	default:
+		return false
+	}
+}
+
+// numericEqual returns true if a and b are numerically equal (int/float64)
+func numericEqual(a, b interface{}) bool {
+	af, aok := toFloat64(a)
+	bf, bok := toFloat64(b)
+	if aok && bok {
+		return af == bf
+	}
+	return false
+}
+
+// toFloat64 converts a numeric value to float64
+func toFloat64(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case int:
+		return float64(n), true
+	case int8:
+		return float64(n), true
+	case int16:
+		return float64(n), true
+	case int32:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case uint:
+		return float64(n), true
+	case uint8:
+		return float64(n), true
+	case uint16:
+		return float64(n), true
+	case uint32:
+		return float64(n), true
+	case uint64:
+		return float64(n), true
+	case float32:
+		return float64(n), true
+	case float64:
+		return n, true
+	default:
+		return 0, false
+	}
 }

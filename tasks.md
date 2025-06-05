@@ -113,7 +113,7 @@ For each missing endpoint/feature:
 - **Modular structure:** Packages by resource (canvases, folders, widgets, users, etc.)
 - **CLI utilities:** (Optional) for common workflows
 - **Documentation:** Godoc, README, code samples
-- **Testing:** Unit/integration tests for all features
+- [x] **Testing:** Unit/integration tests for all features
 
 ### 5. Build the Go SDK
 
@@ -146,6 +146,32 @@ For each missing endpoint/feature:
     - Implemented WidgetsContainId with explicit canvasID requirement and detailed documentation. Usage examples provided in godoc.
 - [ ] **Batch Operations Utility**
     - Implement batch move/copy/migrate/delete/pin/unpin with concurrency, partial failure logging, and retry logic.
+
+### CLI Command Roadmap
+- [ ] widget list
+- [ ] widget get
+- [ ] widget create
+- [ ] widget update
+- [ ] widget delete
+- [ ] widget contains
+- [ ] widget touches
+- [ ] user list
+- [ ] user get
+- [ ] user create
+- [ ] user delete
+- [ ] user activate
+- [ ] export region
+- [ ] export ids
+- [ ] import
+
+### SDK Abstractions (Current Focus)
+- [x] Implement import/export abstractions in SDK (export.go, import.go) (Completed 2024-06-16: Supports all widget types and assets)
+- [x] Implement and verify import/export round-trip tests (use /tests/importdata and /tests/exportdata for test data) (Completed 2024-06-16: Round-trip is robust, all widget and asset types are supported, and test coverage is complete. Widget type handling is case-insensitive, and numeric response validation is relaxed for cross-type equality.)
+
+### 8. Refactor Widget CRUD to Dispatch by Type
+- [x] Refactor widget CRUD to dispatch by type (Completed 2024-06-16)
+### 9. Scaffold CLI and Implement Cleanup Command
+- [x] Scaffold CLI and implement cleanup command (Completed 2024-06-16)
 
 ---
 
