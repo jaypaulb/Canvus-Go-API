@@ -133,14 +133,14 @@ For each missing endpoint/feature:
 
 > The following advanced abstractions/utilities are required for full parity with the design in Abstractions.md. Work will proceed through these in order. (2024-06-16)
 
-- [ ] **Generic Filtering Abstraction**
-    - Implement a reusable, client-side filtering struct supporting arbitrary JSON, wildcards, and JSONPath-like selectors for all list/get endpoints.
-- [ ] **Connector Creation with Widget Spawning**
-    - Enhance CreateConnector to support widget creation as part of connector creation.
-- [ ] **Recursive Widget Search (findWidget/findWidgetIn)**
-    - Implement recursive search utilities for widgets using arbitrary JSON queries and selectors.
-- [ ] **Response Validation & Retry Logic**
-    - Add centralized response validation and retry logic for mismatches and transient errors.
+- [x] **Generic Filtering Abstraction**
+    - Implemented as Filter struct with support for arbitrary JSON, wildcards, and JSONPath-like selectors for all list/get endpoints. Documented in README and code. Complete as of 2024-06-16.
+- [x] **Connector Creation with Widget Spawning**
+    - CreateConnector supports widget creation for src/dst if provided as widget JSON. Complete as of 2024-06-16.
+- [x] **Recursive Widget Search (findWidget/findWidgetIn)**
+    - Implemented as FindWidgetsAcrossCanvases and FilterSlice utilities, supporting recursive and cross-canvas widget search with flexible queries. Complete as of 2024-06-16.
+- [x] **Response Validation & Retry Logic**
+    - Centralized response validation and retry logic implemented in session.go, with relaxed numeric comparison and robust error handling. Complete as of 2024-06-16.
 - [x] **Geometry Utilities (contains, touches)**
     - Add utilities to determine widget containment and overlap within a canvas.
     - Implemented WidgetsContainId with explicit canvasID requirement and detailed documentation. Usage examples provided in godoc.
@@ -163,6 +163,9 @@ For each missing endpoint/feature:
 - [ ] export region
 - [ ] export ids
 - [ ] import
+
+> **Note:**
+> All core SDK features, abstractions, and utilities are now implemented and tested. The next major focus is implementing the above CLI commands. As of 2024-06-16, only the CLI scaffold and a stub for the cleanup command exist; all other CLI commands are pending implementation.
 
 ### SDK Abstractions (Current Focus)
 - [x] Implement import/export abstractions in SDK (export.go, import.go) (Completed 2024-06-16: Supports all widget types and assets)

@@ -9,6 +9,8 @@ A modern, idiomatic Go SDK for the Canvus API. Provides full access to all Canvu
 - Authentication (API key, login, token refresh)
 - Context support for all requests
 - Centralized error handling
+- **Centralized response validation & retry logic:** All API calls are validated against the request, with robust error handling and automatic retries for transient failures.
+- **Geometry utilities:** Utilities for determining widget containment and overlap (e.g., `WidgetsContainId`, `WidgetsTouchId`, `contains`, `touches`).
 - Pagination and streaming helpers
 - Comprehensive tests and examples
 
@@ -178,5 +180,20 @@ for _, m := range matches {
 - Asset files (images, PDFs, videos) are exported as files and referenced in the export JSON. Import reads these files and creates the corresponding widgets with correct spatial and parent/child relationships.
 - The import/export logic is fully covered by integration tests, ensuring that all widgets and assets can be exported from one canvas and imported into another with full fidelity.
 - The SDK normalizes widget types and handles all required fields (location, size, etc.) for all widget types.
+
+### Geometry Utilities Example
+
+You can determine which widgets are spatially contained within or touch a given widget using:
+
+```go
+zone, err := canvus.WidgetsContainId(ctx, session, canvasID, anchorID, nil, 0)
+if err != nil {
+    // handle error
+}
+for _, w := range zone.Contents {
+    fmt.Println(w.ID, w.WidgetType)
+}
+```
+See godoc for more details on geometry utilities.
 
 --- 
