@@ -55,3 +55,14 @@ func (s *Session) DeleteImage(ctx context.Context, canvasID, imageID string) err
 	path := fmt.Sprintf("canvases/%s/images/%s", canvasID, imageID)
 	return s.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
 }
+
+// DownloadImage downloads an image file by ID for a given canvas.
+func (s *Session) DownloadImage(ctx context.Context, canvasID, imageID string) ([]byte, error) {
+	path := fmt.Sprintf("canvases/%s/images/%s/download", canvasID, imageID)
+	var data []byte
+	err := s.doRequest(ctx, "GET", path, nil, &data, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("DownloadImage: %w", err)
+	}
+	return data, nil
+}

@@ -18,11 +18,13 @@ GET /users/:id/access-tokens
 | `subscribe` (query) | boolean | no       | See Streaming                |
 
 **Example cURL Request**:
+
 ```bash
 curl -H "Private-Token: <access token>" https://canvus.example.com/api/v1/users/1001/access-tokens
 ```
 
 **Example Response**:
+
 ```json
 [
   {
@@ -48,11 +50,13 @@ GET /users/:id/access-tokens/:token-id
 | `subscribe` (query) | boolean | no       | See Streaming                |
 
 **Example cURL Request**:
+
 ```bash
 curl -H "Private-Token: <access token>" https://canvus.example.com/api/v1/users/1001/access-tokens/JDJhJDA0JENKTWJDT0g1QVNYSkFQTXh3NlhNWi5CWjlqT05yR2h0cXJ1d1VQZW9sZWlsWkJneXRXbTRp
 ```
 
 **Example Response**:
+
 ```json
 {
   "created_at": "2021-07-02T06:38:36.025",
@@ -75,11 +79,13 @@ POST /users/:id/access-tokens
 | `description`       | string  | yes      | Description of the new token |
 
 **Example cURL Request**:
+
 ```bash
 curl -X POST -H "Private-Token: W1bns7ZYuN_u7fQTR3i6L0JopiRCGsbNjXRw7Z-yX0E" -d '{"description":"Second token"}' https://canvus.example.com/api/v1/users/1001/access-tokens
 ```
 
 **Example Response**:
+
 ```json
 {
   "created_at": "2021-07-02T09:38:36.193",
@@ -104,11 +110,13 @@ PATCH /users/:id/access-tokens/:token-id
 | `description`       | string  | yes      | New description              |
 
 **Example cURL Request**:
+
 ```bash
 curl -X PATCH -H "Private-Token: W1bns7ZYuN_u7fQTR3i6L0JopiRCGsbNjXRw7Z-yX0E" -d '{"description":"Updated description"}' https://canvus.example.com/api/v1/users/1001/access-tokens/JDJhJDA0JENKTWJDT0g1QVNYSkFQTXh3NlhNWi5CWjlqT05yR2h0cXJ1d1VQZW9sZWlsWkJneXRXbTRp
 ```
 
 **Example Response**:
+
 ```json
 {
   "created_at": "2021-07-02T06:38:36.025",
@@ -131,6 +139,7 @@ DELETE /users/:id/access-tokens/:token-id
 | `token-id` (path)   | string  | yes      | The ID of the token          |
 
 **Example cURL Request**:
+
 ```bash
 curl -X DELETE -H "Private-Token: W1bns7ZYuN_u7fQTR3i6L0JopiRCGsbNjXRw7Z-yX0E" https://canvus.example.com/api/v1/users/1001/access-tokens/JDJhJDA0JENKTWJDT0g1QVNYSkFQTXh3NlhNWi5CWjlqT05yR2h0cXJ1d1VQZW9sZWlsWkJneXRXbTRp
-``` 
+```

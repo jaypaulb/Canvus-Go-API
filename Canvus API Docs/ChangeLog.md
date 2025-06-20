@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.3
+## v1.3 proposed based on found undocumented api calls
 
 - Added:
   - Annotations API

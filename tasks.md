@@ -158,7 +158,7 @@ For each missing endpoint/feature:
 - [ ] user list
 - [ ] user get
 - [ ] user create
-- [ ] user delete
+- [x] user delete (Implemented `cleanup_test_users.go`)
 - [ ] user activate
 - [ ] export region
 - [ ] export ids
@@ -166,6 +166,7 @@ For each missing endpoint/feature:
 
 > **Note:**
 > All core SDK features, abstractions, and utilities are now implemented and tested. The next major focus is implementing the above CLI commands. As of 2024-06-16, only the CLI scaffold and a stub for the cleanup command exist; all other CLI commands are pending implementation.
+> The `cleanup_test_users.go` script has been implemented to list and delete users whose emails start with "testuser".
 
 ### SDK Abstractions (Current Focus)
 - [x] Implement import/export abstractions in SDK (export.go, import.go) (Completed 2024-06-16: Supports all widget types and assets)

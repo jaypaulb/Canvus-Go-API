@@ -49,7 +49,7 @@ This document outlines the key abstractions, utilities, and advanced features pl
 ## 6. Viewport & Widget Location Utilities
 
 - **Design:**
-  - Can set viewport centered on a widget (default) or at top-left (0,0) as an option.
+  - Can set can you port centered on a widget (default) or at top-left (0,0) as an option.
   - `open-canvas` accepts an option to open at a specific widget or location.
 
 ## 7. Geometry Utilities (contains, touches)

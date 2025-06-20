@@ -39,10 +39,10 @@ func (s *Session) DownloadPDF(ctx context.Context, canvasID, pdfID string) ([]by
 }
 
 // CreatePDF creates a new PDF on a canvas. This must be a multipart POST with a 'json' and 'data' part.
-func (s *Session) CreatePDF(ctx context.Context, canvasID string, multipartBody interface{}) (*PDF, error) {
+func (s *Session) CreatePDF(ctx context.Context, canvasID string, multipartBody interface{}, contentType string) (*PDF, error) {
 	var pdf PDF
 	path := fmt.Sprintf("canvases/%s/pdfs", canvasID)
-	err := s.doRequest(ctx, "POST", path, multipartBody, &pdf, nil, false)
+	err := s.doRequest(ctx, "POST", path, multipartBody, &pdf, nil, false, contentType)
 	if err != nil {
 		return nil, fmt.Errorf("CreatePDF: %w", err)
 	}

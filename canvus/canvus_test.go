@@ -1,12 +1,9 @@
 package canvus
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"os"
 	"testing"
 	"time"
@@ -99,15 +96,14 @@ func TestWidgetAndAssetEndpoints(t *testing.T) {
 	widgetIDs = append(widgetIDs, image.ID)
 
 	fmt.Printf("[%s] CREATE: PDFs\n", time.Now().Format(time.RFC3339Nano))
-	// (Assume test PDF file exists)
 	pdfFile, err := os.Open("../test_files/test.pdf")
 	if err == nil {
 		pdfBytes, _ := io.ReadAll(pdfFile)
 		pdfFile.Close()
 		meta := map[string]interface{}{"title": "test pdf", "widget_type": "pdf"}
-		body, _, err := buildMultipartBody(meta, "data", "test.pdf", pdfBytes)
+		body, pdfContentType, err := buildMultipartBody(meta, "data", "test.pdf", pdfBytes)
 		if err == nil {
-			pdf, err := session.CreatePDF(ctx, canvas.ID, body)
+			pdf, err := session.CreatePDF(ctx, canvas.ID, body, pdfContentType)
 			if err == nil {
 				pdfIDs = append(pdfIDs, pdf.ID)
 				widgetIDs = append(widgetIDs, pdf.ID)
@@ -116,15 +112,14 @@ func TestWidgetAndAssetEndpoints(t *testing.T) {
 	}
 
 	fmt.Printf("[%s] CREATE: Videos\n", time.Now().Format(time.RFC3339Nano))
-	// (Assume test video file exists)
 	videoFile, err := os.Open("../test_files/test_video.mp4")
 	if err == nil {
 		videoBytes, _ := io.ReadAll(videoFile)
 		videoFile.Close()
 		meta := map[string]interface{}{"title": "test video", "widget_type": "video"}
-		body, _, err := buildMultipartBody(meta, "data", "test_video.mp4", videoBytes)
+		body, videoContentType, err := buildMultipartBody(meta, "data", "test_video.mp4", videoBytes)
 		if err == nil {
-			video, err := session.CreateVideo(ctx, canvas.ID, body)
+			video, err := session.CreateVideo(ctx, canvas.ID, body, videoContentType)
 			if err == nil {
 				videoIDs = append(videoIDs, video.ID)
 				widgetIDs = append(widgetIDs, video.ID)
@@ -332,14 +327,18 @@ func TestWidgetAndAssetEndpoints(t *testing.T) {
 func getTestUserSession(ctx context.Context) (*Session, func(), error) {
 	ts, err := loadTestSettings()
 	if err != nil {
+		fmt.Printf("[DEBUG] loadTestSettings error: %v\n", err)
 		return nil, func() {}, err
 	}
+	fmt.Printf("[DEBUG] Loaded settings: api_base_url=%s, api_key=%s\n", ts.APIBaseURL, ts.APIKey)
 	admin := NewSessionFromConfig(ts.APIBaseURL, ts.APIKey)
 	testEmail := "testuser_" + fmt.Sprint(time.Now().UnixNano()) + "@example.com"
 	testName := "testuser_" + fmt.Sprint(time.Now().UnixNano())
 	testPassword := "TestPassword123!"
+	fmt.Printf("[DEBUG] Creating test user: email=%s, name=%s\n", testEmail, testName)
 	tc, err := NewTestClient(ctx, admin, ts.APIBaseURL, testEmail, testName, testPassword)
 	if err != nil {
+		fmt.Printf("[DEBUG] NewTestClient error: %v\n", err)
 		return nil, func() {}, err
 	}
 	cleanup := func() { _ = tc.Cleanup(ctx) }
@@ -362,38 +361,6 @@ func createTestCanvas(ctx context.Context, session *Session, name, folderID stri
 		return nil, err
 	}
 	return canvas, nil
-}
-
-// Helper: build a multipart body for upload endpoints
-func buildMultipartBody(jsonPart map[string]interface{}, fileField, fileName string, fileContent []byte) (io.Reader, string, error) {
-	buf := &bytes.Buffer{}
-	w := multipart.NewWriter(buf)
-	// Add json part
-	if jsonPart != nil {
-		jsonBytes, err := json.Marshal(jsonPart)
-		if err != nil {
-			return nil, "", err
-		}
-		fw, err := w.CreateFormField("json")
-		if err != nil {
-			return nil, "", err
-		}
-		if _, err := fw.Write(jsonBytes); err != nil {
-			return nil, "", err
-		}
-	}
-	// Add file part
-	if fileField != "" && fileName != "" && fileContent != nil {
-		fw, err := w.CreateFormFile(fileField, fileName)
-		if err != nil {
-			return nil, "", err
-		}
-		if _, err := fw.Write(fileContent); err != nil {
-			return nil, "", err
-		}
-	}
-	w.Close()
-	return buf, w.FormDataContentType(), nil
 }
 
 func hasActiveClient(ctx context.Context) bool { return false }

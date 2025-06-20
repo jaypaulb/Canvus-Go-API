@@ -14,11 +14,13 @@ GET /canvases/:id/videos
 | `subscribe` (query) | boolean | no       | See Streaming            |
 
 **Example cURL Request**:
+
 ```bash
 curl -H "Private-Token: <access token>" https://canvus.example.com/api/v1/canvases/a8b5ed9e-6e57-41c8-96cb-be4aec4bfd03/videos
 ```
 
 **Example Response**:
+
 ```json
 [
   {
@@ -61,11 +63,13 @@ GET /canvases/:id/videos/:video_id
 | `subscribe` (query) | boolean | no       | See Streaming                 |
 
 **Example cURL Request**:
+
 ```bash
 curl -H "Private-Token: <access token>" https://canvus.example.com/api/v1/canvases/a8b5ed9e-6e57-41c8-96cb-be4aec4bfd03/videos/105a8486-ac84-49f9-a487-763279a6f658
 ```
 
 **Example Response**:
+
 ```json
 {
   "depth": 0,
@@ -105,6 +109,7 @@ GET /canvases/:id/videos/:video_id/download
 | `video_id` (path)   | uuid    | yes      | ID of the video to download   |
 
 **Example cURL Request**:
+
 ```bash
 curl -H "Private-Token: <access token>" https://canvus.example.com/api/v1/canvases/a8b5ed9e-6e57-41c8-96cb-be4aec4bfd03/videos/105a8486-ac84-49f9-a487-763279a6f658/download
 ```
@@ -132,11 +137,13 @@ POST /canvases/:id/videos
 | `playback_position` | number  | no       | Current playback position in seconds |
 
 **Example cURL Request**:
+
 ```bash
 curl -X POST -H "Private-Token: <access token>" -F 'json={"title":"A video"}' -F 'data=@SampleVideo_1280x720_1mb.mp4' https://canvus.example.com/api/v1/canvases/a8b5ed9e-6e57-41c8-96cb-be4aec4bfd03/videos
 ```
 
 **Example Response**:
+
 ```json
 {
   "depth": 0,
@@ -186,11 +193,13 @@ PATCH /canvases/:id/videos/:video_id
 | `playback_position` | number  | no       | Current playback position in seconds |
 
 **Example cURL Request**:
+
 ```bash
 curl -X PATCH -H "Private-Token: <access token>" -d '{"title":"Sample"}' https://canvus.example.com/api/v1/canvases/a8b5ed9e-6e57-41c8-96cb-be4aec4bfd03/videos/105a8486-ac84-49f9-a487-763279a6f658
 ```
 
 **Example Response**:
+
 ```json
 {
   "depth": 0,
@@ -232,6 +241,7 @@ DELETE /canvases/:id/videos/:video_id
 | `video_id` (path)   | uuid    | yes      | ID of the video to delete     |
 
 **Example cURL Request**:
+
 ```bash
 curl -X DELETE -H "Private-Token: <access token>" https://canvus.example.com/api/v1/canvases/a8b5ed9e-6e57-41c8-96cb-be4aec4bfd03/videos/105a8486-ac84-49f9-a487-763279a6f658
 ```

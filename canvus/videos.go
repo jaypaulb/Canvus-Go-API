@@ -39,10 +39,10 @@ func (s *Session) DownloadVideo(ctx context.Context, canvasID, videoID string) (
 }
 
 // CreateVideo creates a new video on a canvas. This must be a multipart POST with a 'json' and 'data' part.
-func (s *Session) CreateVideo(ctx context.Context, canvasID string, multipartBody interface{}) (*Video, error) {
+func (s *Session) CreateVideo(ctx context.Context, canvasID string, multipartBody interface{}, contentType string) (*Video, error) {
 	var video Video
 	path := fmt.Sprintf("canvases/%s/videos", canvasID)
-	err := s.doRequest(ctx, "POST", path, multipartBody, &video, nil, false)
+	err := s.doRequest(ctx, "POST", path, multipartBody, &video, nil, false, contentType)
 	if err != nil {
 		return nil, fmt.Errorf("CreateVideo: %w", err)
 	}

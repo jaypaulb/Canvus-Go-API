@@ -1,5 +1,8 @@
 # Ignore Cursor, reference, and old code directories
 .cursor/
+.cursor
+.cursorignore
+*.cursor
 Old-Libs/
 CanvusPythonAPI/
 
