@@ -4,15 +4,21 @@ package canvus
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math"
+	"math/big"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -34,6 +40,21 @@ func (a *APIKeyAuthenticator) Authenticate(req *http.Request) {
 	}
 }
 
+// transportWithAPIKey is an http.RoundTripper that adds an API key to requests
+type transportWithAPIKey struct {
+	transport http.RoundTripper
+	header   string
+	apiKey   string
+}
+
+// RoundTrip adds the API key to the request headers
+func (t *transportWithAPIKey) RoundTrip(req *http.Request) (*http.Response, error) {
+	req = req.Clone(req.Context())
+	req.Header.Add(t.header, t.apiKey)
+	req.Header.Add("Content-Type", "application/json")
+	return t.transport.RoundTrip(req)
+}
+
 // TokenAuthenticator authenticates using a bearer token.
 type TokenAuthenticator struct {
 	Token string
@@ -50,9 +71,28 @@ func (a *TokenAuthenticator) Authenticate(req *http.Request) {
 type SessionOption func(*Session)
 
 // WithAPIKey configures the session to use a static API key.
-func WithAPIKey(apiKey string) SessionOption {
-	return func(s *Session) {
-		s.authenticator = &APIKeyAuthenticator{Header: "Private-Token", APIKey: apiKey}
+func WithAPIKey(apiKey string) SessionConfigOption {
+	return func(cfg *SessionConfig) {
+		// Create a new session with the API key
+		if cfg.HTTPClient == nil {
+			cfg.HTTPClient = &http.Client{
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+				},
+			}
+		}
+
+		// Create a transport that adds the API key to requests
+		transport := cfg.HTTPClient.Transport
+		if transport == nil {
+			transport = http.DefaultTransport
+		}
+
+		cfg.HTTPClient.Transport = &transportWithAPIKey{
+			transport: transport,
+			header:   "Private-Token",
+			apiKey:   apiKey,
+		}
 	}
 }
 
@@ -63,35 +103,220 @@ func WithToken(token string) SessionOption {
 	}
 }
 
+// circuitState represents the state of the circuit breaker
+type circuitState int
+
+const (
+	circuitStateClosed circuitState = iota
+	circuitStateOpen
+	circuitStateHalfOpen
+)
+
+// circuitBreaker implements a simple circuit breaker pattern
+type circuitBreaker struct {
+	state          circuitState
+	failures       int
+	maxFailures    int
+	resetTimeout   time.Duration
+	lastFailure    time.Time
+	mutex          sync.RWMutex
+}
+
+func newCircuitBreaker(maxFailures int, resetTimeout time.Duration) *circuitBreaker {
+	return &circuitBreaker{
+		state:        circuitStateClosed,
+		maxFailures:  maxFailures,
+		resetTimeout: resetTimeout,
+	}
+}
+
+func (cb *circuitBreaker) allow() bool {
+	cb.mutex.RLock()
+	defer cb.mutex.RUnlock()
+
+	if cb.state == circuitStateClosed {
+		return true
+	}
+
+	// If circuit is open, check if we should try to let a request through
+	if cb.state == circuitStateOpen && time.Since(cb.lastFailure) > cb.resetTimeout {
+		cb.mutex.RUnlock()
+		cb.mutex.Lock()
+		cb.state = circuitStateHalfOpen
+		cb.mutex.Unlock()
+		cb.mutex.RLock()
+		return true
+	}
+
+	return false
+}
+
+func (cb *circuitBreaker) success() {
+	cb.mutex.Lock()
+	defer cb.mutex.Unlock()
+
+	switch cb.state {
+	case circuitStateHalfOpen:
+		// Success in half-open state closes the circuit
+		cb.state = circuitStateClosed
+		cb.failures = 0
+	case circuitStateClosed:
+		// Reset failure count on success
+		cb.failures = 0
+	}
+}
+
+func (cb *circuitBreaker) failure() {
+	cb.mutex.Lock()
+	defer cb.mutex.Unlock()
+
+	switch cb.state {
+	case circuitStateClosed:
+		cb.failures++
+		if cb.failures >= cb.maxFailures {
+			cb.state = circuitStateOpen
+			cb.lastFailure = time.Now()
+		}
+	case circuitStateHalfOpen:
+		// A failure in half-open state re-opens the circuit
+		cb.state = circuitStateOpen
+		cb.lastFailure = time.Now()
+	}
+}
+
+// tokenManager handles token storage and refresh
+type tokenManager struct {
+	tokenStore     TokenStore
+	currentToken   string
+	tokenExpiry    time.Time
+	refreshMutex   sync.Mutex
+	config         *SessionConfig
+}
+
+func newTokenManager(config *SessionConfig) *tokenManager {
+	tm := &tokenManager{
+		config: config,
+	}
+	if config.TokenStore != nil {
+		tm.tokenStore = config.TokenStore
+		// Try to load token from store
+		token, _ := tm.tokenStore.GetToken()
+		tm.currentToken = token
+	}
+	return tm
+}
+
+func (tm *tokenManager) getToken() string {
+	tm.refreshMutex.Lock()
+	defer tm.refreshMutex.Unlock()
+
+	// If token is about to expire or already expired, try to refresh it
+	if !tm.tokenExpiry.IsZero() && time.Until(tm.tokenExpiry) < tm.config.TokenRefreshThreshold {
+		tm.refreshToken()
+	}
+
+	return tm.currentToken
+}
+
+func (tm *tokenManager) setToken(token string, expiresIn time.Duration) {
+	tm.refreshMutex.Lock()
+	defer tm.refreshMutex.Unlock()
+
+	tm.currentToken = token
+	if expiresIn > 0 {
+		tm.tokenExpiry = time.Now().Add(expiresIn)
+	}
+
+	// Persist to store if available
+	if tm.tokenStore != nil && token != "" {
+		_ = tm.tokenStore.StoreToken(token, tm.tokenExpiry)
+	}
+}
+
+func (tm *tokenManager) clearToken() {
+	tm.refreshMutex.Lock()
+	defer tm.refreshMutex.Unlock()
+
+	tm.currentToken = ""
+	tm.tokenExpiry = time.Time{}
+
+	// Clear from store if available
+	if tm.tokenStore != nil {
+		_ = tm.tokenStore.ClearToken()
+	}
+}
+
+func (tm *tokenManager) refreshToken() error {
+	// Implementation depends on your authentication flow
+	// This is a placeholder - replace with actual token refresh logic
+	return nil
+}
+
 // Session is the main entry point for interacting with the Canvus API.
 type Session struct {
 	BaseURL       string
 	HTTPClient    *http.Client
+	config        *SessionConfig
 	authenticator Authenticator
+	tokenManager  *tokenManager
+	circuitBreaker *circuitBreaker
 	userID        int64 // ID of the authenticated user, if available
 }
 
-// NewSession creates a new Canvus API session.
-// If httpClient is nil, http.DefaultClient is used.
-func NewSession(baseURL string, opts ...SessionOption) *Session {
-	s := &Session{
-		BaseURL:    baseURL,
-		HTTPClient: http.DefaultClient,
-	}
+// NewSession creates a new Canvus API session with the provided configuration.
+func NewSession(cfg *SessionConfig, opts ...SessionConfigOption) *Session {
+	// Apply any overrides to the config
 	for _, opt := range opts {
-		opt(s)
+		opt(cfg)
 	}
+
+	// Ensure we have a valid HTTP client
+	if cfg.HTTPClient == nil {
+		cfg.HTTPClient = http.DefaultClient
+	}
+
+	// Set default timeouts if not configured
+	if cfg.HTTPClient.Timeout == 0 {
+		cfg.HTTPClient.Timeout = cfg.RequestTimeout
+	}
+
+	s := &Session{
+		BaseURL:       cfg.BaseURL,
+		HTTPClient:    cfg.HTTPClient,
+		config:        cfg,
+		tokenManager:  newTokenManager(cfg),
+		circuitBreaker: newCircuitBreaker(cfg.CircuitBreaker.MaxFailures, cfg.CircuitBreaker.ResetTimeout),
+	}
+
+
+	// If we have a token from the store, use it
+	if s.tokenManager.tokenStore != nil {
+		if token, err := s.tokenManager.tokenStore.GetToken(); err == nil && token != "" {
+			s.authenticator = &TokenAuthenticator{Token: token}
+		}
+	}
+
 	return s
 }
-
-// doRequest is a helper for making HTTP requests to the Canvus API.
-// Adds centralized response validation and retry logic:
-// - Validates the response body (if out != nil) using validateResponse.
-// - Retries up to 3 times on transient errors (5xx, network errors, validation failures) with exponential backoff.
+// Implements retry logic with exponential backoff, circuit breaking, and token refresh.
 func (s *Session) doRequest(ctx context.Context, method, endpoint string, body interface{}, out interface{}, queryParams map[string]string, rawResponse bool, contentType ...string) error {
+	var lastErr error
+	var resp *http.Response
+	var respBody []byte
+
+	// Check circuit breaker first
+	if !s.circuitBreaker.allow() {
+		return &APIError{
+			StatusCode: http.StatusServiceUnavailable,
+			Code:      "circuit_breaker_open",
+			Message:   "service unavailable due to circuit breaker being open",
+		}
+	}
+
+	// Parse URL
 	u, err := url.Parse(s.BaseURL)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid base URL: %w", err)
 	}
 	u.Path = path.Join(u.Path, endpoint)
 
@@ -104,99 +329,257 @@ func (s *Session) doRequest(ctx context.Context, method, endpoint string, body i
 		u.RawQuery = q.Encode()
 	}
 
-	var lastErr error
-	maxRetries := 3
-	for attempt := 0; attempt < maxRetries; attempt++ {
-		var reqBody io.Reader
-		var ct string
-		if body != nil {
-			if rdr, ok := body.(io.Reader); ok {
-				// If it's a ReadSeeker, reset to start for each attempt
-				if seeker, ok := rdr.(io.ReadSeeker); ok {
-					seeker.Seek(0, io.SeekStart)
-				}
-				reqBody = rdr
-				if len(contentType) > 0 {
-					ct = contentType[0]
-				} else {
-					ct = "application/octet-stream"
-				}
-			} else {
-				b, err := json.Marshal(body)
-				if err != nil {
-					return err
-				}
-				reqBody = bytes.NewReader(b)
-				ct = "application/json"
+	// Determine content type
+	var ct string
+	if len(contentType) > 0 {
+		ct = contentType[0]
+	} else if body != nil {
+		ct = "application/json"
+	}
+
+	// Main retry loop
+	for attempt := 0; attempt <= s.config.MaxRetries; attempt++ {
+		// Prepare request body
+		reqBody, retryable, err := s.prepareRequestBody(body, ct)
+		if err != nil {
+			if !retryable || attempt == s.config.MaxRetries {
+				return err
 			}
+			continue
 		}
 
+		// Create request
 		req, err := http.NewRequestWithContext(ctx, method, u.String(), reqBody)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create request: %w", err)
 		}
+
+		// Set headers
+		if ct != "" {
+			req.Header.Set("Content-Type", ct)
+		}
+		req.Header.Set("User-Agent", s.config.UserAgent)
+
+		// Apply authentication
 		if s.authenticator != nil {
 			s.authenticator.Authenticate(req)
 		}
-		if body != nil {
-			req.Header.Set("Content-Type", ct)
-		}
 
-		resp, err := s.HTTPClient.Do(req)
+		// Execute request
+		resp, err = s.HTTPClient.Do(req)
 		if err != nil {
-			lastErr = err
-			if attempt < maxRetries-1 {
-				time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
-				continue
+			lastErr = fmt.Errorf("request failed: %w", err)
+			if !isRetryableError(err) || attempt == s.config.MaxRetries {
+				s.circuitBreaker.failure()
+				return lastErr
 			}
-			return err
-		}
-		defer resp.Body.Close()
-
-		respBody, _ := io.ReadAll(resp.Body)
-
-		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			lastErr = &APIError{StatusCode: resp.StatusCode, Message: string(respBody)}
-			// Retry on 5xx only
-			if resp.StatusCode >= 500 && attempt < maxRetries-1 {
-				time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
+			if shouldRetry(err, attempt, s.config) {
+				time.Sleep(calculateBackoff(attempt, s.config))
 				continue
 			}
 			return lastErr
 		}
-		if out != nil {
-			if rawResponse {
-				if ptr, ok := out.(*[]byte); ok {
-					*ptr = respBody
-				} else {
-					return errors.New("out must be *[]byte when rawResponse is true")
-				}
-			} else {
-				// Always decode from the reset buffer
-				decErr := json.NewDecoder(bytes.NewReader(respBody)).Decode(out)
-				if decErr != nil {
-					lastErr = decErr
-					// Only retry on 5xx or network errors, not on decode errors for 4xx
-					if attempt < maxRetries-1 && resp.StatusCode >= 500 {
-						time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
+
+		// Read response body
+		respBody, err = io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		// Handle non-2xx responses
+		if resp.StatusCode >= 400 {
+			lastErr = s.handleErrorResponse(resp, respBody, attempt)
+			if apiErr, ok := lastErr.(*APIError); ok {
+				// Handle token expiration
+				if apiErr.StatusCode == http.StatusUnauthorized && attempt == 0 {
+					if refreshErr := s.refreshAuthToken(ctx); refreshErr == nil {
+						// Retry with new token
 						continue
 					}
-					return decErr
 				}
-				// Centralized response validation
-				if err := validateResponse(out, body, method); err != nil {
-					lastErr = err
-					if attempt < maxRetries-1 && resp.StatusCode >= 500 {
-						time.Sleep(time.Duration(1<<attempt) * 100 * time.Millisecond)
-						continue
-					}
-					return fmt.Errorf("response validation failed: %w", err)
+
+				// Check if we should retry
+				if isRetryableError(apiErr) && attempt < s.config.MaxRetries {
+					time.Sleep(calculateBackoff(attempt, s.config))
+					continue
 				}
 			}
+			s.circuitBreaker.failure()
+			return lastErr
 		}
-		return nil // Always return after a successful request
+
+		// Process successful response
+		s.circuitBreaker.success()
+
+		// Handle raw response if requested
+		if rawResponse {
+			if ptr, ok := out.(*[]byte); ok {
+				*ptr = respBody
+				return nil
+			}
+			return errors.New("out must be *[]byte when rawResponse is true")
+		}
+
+		// Parse response body
+		if out != nil {
+			if err := json.Unmarshal(respBody, out); err != nil {
+				return fmt.Errorf("failed to decode response: %w", err)
+			}
+
+			// Validate response if needed
+			if err := validateResponse(out, body, method); err != nil {
+				return fmt.Errorf("response validation failed: %w", err)
+			}
+		}
+
+		return nil
 	}
-	return nil // Also return if no output is expected and request succeeded
+
+	// If we get here, we've exhausted all retries
+	s.circuitBreaker.failure()
+	if lastErr != nil {
+		return fmt.Errorf("request failed after %d attempts: %w", s.config.MaxRetries, lastErr)
+	}
+	return errors.New("request failed: unknown error")
+}
+
+// prepareRequestBody prepares the request body and determines if the error is retryable
+func (s *Session) prepareRequestBody(body interface{}, contentType string) (io.Reader, bool, error) {
+	if body == nil {
+		return nil, true, nil
+	}
+
+	// Handle raw readers
+	if rdr, ok := body.(io.Reader); ok {
+		// If it's a ReadSeeker, reset to start for each attempt
+		if seeker, ok := rdr.(io.ReadSeeker); ok {
+			_, _ = seeker.Seek(0, io.SeekStart)
+		}
+		return rdr, true, nil
+	}
+
+	// Handle other types by marshaling to JSON
+	b, err := json.Marshal(body)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	return bytes.NewReader(b), true, nil
+}
+
+// handleErrorResponse processes error responses and returns an appropriate error
+func (s *Session) handleErrorResponse(resp *http.Response, body []byte, attempt int) error {
+	// Try to parse as API error
+	var apiErr *APIError
+	if err := json.Unmarshal(body, &apiErr); err == nil && apiErr.Code != "" {
+		apiErr.StatusCode = resp.StatusCode
+		return apiErr
+	}
+
+	// Fall back to generic error
+	errCode := ErrorCode(fmt.Sprintf("http_%d", resp.StatusCode))
+	return &APIError{
+		StatusCode: resp.StatusCode,
+		Code:      errCode,
+		Message:   string(body),
+	}
+}
+
+// refreshAuthToken attempts to refresh the authentication token
+func (s *Session) refreshAuthToken(ctx context.Context) error {
+	// If we're using token-based auth, try to refresh the token
+	if tokenAuth, ok := s.authenticator.(*TokenAuthenticator); ok {
+		// Use the token manager to handle refresh
+		newToken := s.tokenManager.getToken()
+		if newToken != "" && newToken != tokenAuth.Token {
+			tokenAuth.Token = newToken
+			return nil
+		}
+
+		// If we couldn't get a new token, clear the current one
+		s.authenticator = nil
+	}
+	return errors.New("unable to refresh authentication token")
+}
+
+// isRetryableError determines if an error is retryable
+func isRetryableError(err error) bool {
+	// Network errors are always retryable
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return true
+	}
+
+	// Check for context errors
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+
+	// Check for API errors
+	var apiErr *APIError
+	if errors.As(err, &apiErr) {
+		switch {
+		case apiErr.StatusCode >= 500: // Server errors
+			return true
+		case apiErr.StatusCode == 429: // Rate limited
+			return true
+		case apiErr.StatusCode == 408: // Request Timeout
+			return true
+		case apiErr.StatusCode == 0: // Network/connection error
+			return true
+		default:
+			return false
+		}
+	}
+
+	return false
+}
+
+// shouldRetry determines if a request should be retried
+func shouldRetry(err error, attempt int, config *SessionConfig) bool {
+	if attempt >= config.MaxRetries {
+		return false
+	}
+
+	// Always retry on network errors
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return true
+	}
+
+	// Don't retry on context cancellation
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+
+	return true
+}
+
+// calculateBackoff calculates the backoff duration using exponential backoff with jitter
+func calculateBackoff(attempt int, config *SessionConfig) time.Duration {
+	// Calculate exponential backoff with jitter
+	min := float64(config.RetryWaitMin)
+	max := float64(config.RetryWaitMax)
+
+	if min >= max {
+		return config.RetryWaitMax
+	}
+
+	// Calculate backoff with jitter
+	backoff := min * math.Pow(2, float64(attempt))
+	if backoff > max {
+		backoff = max
+	}
+
+	// Add jitter (random value between 0 and backoff/2)
+	randVal, _ := rand.Int(rand.Reader, big.NewInt(1000))
+	jitter := (float64(randVal.Int64()) / 1000.0) * (backoff / 2)
+	duration := time.Duration(backoff + jitter)
+
+	// Ensure we don't exceed max wait time
+	if duration > config.RetryWaitMax {
+		duration = config.RetryWaitMax
+	}
+
+	return duration
 }
 
 // validateResponse performs validation on the decoded response object.

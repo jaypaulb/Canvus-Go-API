@@ -118,7 +118,9 @@ func NewTestClient(ctx context.Context, adminSession *Session, baseURL, testEmai
 		return nil, err
 	}
 	// 2. Login as new user
-	testSession := NewSession(baseURL)
+	config := DefaultSessionConfig()
+	config.BaseURL = baseURL
+	testSession := NewSession(config)
 	err = testSession.Login(ctx, testEmail, testPassword)
 	if err != nil {
 		// Cleanup user if login fails
@@ -153,7 +155,9 @@ func (tc *TestClient) Cleanup(ctx context.Context) error {
 // NewUserClient logs in as an existing user and returns a UserClient with a temporary token.
 // The token is invalidated on Cleanup.
 func NewUserClient(ctx context.Context, baseURL, email, password string) (*UserClient, error) {
-	session := NewSession(baseURL)
+	config := DefaultSessionConfig()
+	config.BaseURL = baseURL
+	session := NewSession(config)
 	err := session.Login(ctx, email, password)
 	if err != nil {
 		return nil, err
@@ -182,5 +186,18 @@ func (uc *UserClient) Cleanup(ctx context.Context) error {
 // NewSessionFromConfig creates a Session using credentials from a config/settings file.
 // This is the standard persistent client; no automatic cleanup is performed.
 func NewSessionFromConfig(baseURL, apiKey string) *Session {
-	return NewSession(baseURL, WithAPIKey(apiKey))
+	config := DefaultSessionConfig()
+	config.BaseURL = baseURL
+	session := NewSession(config)
+	if apiKey != "" {
+		session.authenticator = &APIKeyAuthenticator{Header: "Private-Token", APIKey: apiKey}
+	}
+	return session
+}
+
+// NewDefaultSession creates a new session with default configuration.
+func NewDefaultSession(baseURL string) *Session {
+	config := DefaultSessionConfig()
+	config.BaseURL = baseURL
+	return NewSession(config)
 }

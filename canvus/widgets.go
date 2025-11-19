@@ -333,7 +333,7 @@ func WidgetsContainId(ctx context.Context, s *Session, canvasID string, widgetID
 		if w.WidgetType == "SharedCanvas" {
 			continue // skip SharedCanvas in results
 		}
-		if WidgetContainsRect(srcRect, w) {
+		if Contains(srcRect, WidgetBoundingBox(w)) {
 			// Normalize ParentID if it matches SharedCanvas
 			if sharedCanvasID != "" && w.ParentID == sharedCanvasID {
 				w.ParentID = ""
@@ -348,70 +348,29 @@ func WidgetsContainId(ctx context.Context, s *Session, canvasID string, widgetID
 	return WidgetZone{CanvasID: canvasID, SharedCanvasID: sharedCanvasID, Container: srcWidget, Contents: contained}, nil
 }
 
-// WidgetContainsRect returns true if the given rectangle fully contains the widget's bounding box.
-func WidgetContainsRect(rect Rectangle, w Widget) bool {
-	return Contains(rect, WidgetBoundingBox(w))
+
+// MoveWidget moves a widget to another canvas.
+func (s *Session) MoveWidget(ctx context.Context, widgetID, targetCanvasID string) error {
+path := fmt.Sprintf("widgets/%s/move", widgetID)
+req := map[string]string{"canvas_id": targetCanvasID}
+return s.doRequest(ctx, "POST", path, req, nil, nil, false)
 }
 
-// WidgetsTouchId returns a WidgetZone: the source widget as Container, and all widgets that touch it as Contents.
-// For all returned widgets, if ParentID matches the SharedCanvas ID, it is set to "".
-func WidgetsTouchId(ctx context.Context, s *Session, canvasID string, widgetID string, widget *Widget, tolerance float64) (WidgetZone, error) {
-	var srcWidget Widget
-	if widget != nil {
-		srcWidget = *widget
-	} else {
-		if widgetID == "" {
-			return WidgetZone{}, fmt.Errorf("WidgetsTouchId: widgetID must be provided if widget is nil")
-		}
-		w, err := s.GetWidget(ctx, canvasID, widgetID)
-		if err != nil {
-			return WidgetZone{}, fmt.Errorf("WidgetsTouchId: failed to fetch widget: %w", err)
-		}
-		srcWidget = *w
-	}
+// CopyWidget copies a widget to another canvas.
+func (s *Session) CopyWidget(ctx context.Context, widgetID, targetCanvasID string) error {
+path := fmt.Sprintf("widgets/%s/copy", widgetID)
+req := map[string]string{"canvas_id": targetCanvasID}
+return s.doRequest(ctx, "POST", path, req, nil, nil, false)
+}
 
-	// Fetch all widgets on the same canvas
-	widgets, err := s.ListWidgets(ctx, canvasID, nil)
-	if err != nil {
-		return WidgetZone{}, fmt.Errorf("WidgetsTouchId: failed to list widgets: %w", err)
-	}
+// PinWidget pins a widget.
+func (s *Session) PinWidget(ctx context.Context, widgetID string) error {
+path := fmt.Sprintf("widgets/%s/pin", widgetID)
+return s.doRequest(ctx, "POST", path, nil, nil, nil, false)
+}
 
-	// Find SharedCanvas ID
-	var sharedCanvasID string
-	for _, w := range widgets {
-		if w.WidgetType == "SharedCanvas" {
-			sharedCanvasID = w.ID
-			break
-		}
-	}
-
-	srcRect := WidgetBoundingBox(srcWidget)
-	// Expand bounding box by tolerance
-	srcRect.X -= tolerance
-	srcRect.Y -= tolerance
-	srcRect.Width += 2 * tolerance
-	srcRect.Height += 2 * tolerance
-
-	var touched []Widget
-	for _, w := range widgets {
-		if w.ID == srcWidget.ID {
-			fmt.Printf("[TOUCHES] Skipping self: %s\n", w.ID)
-			continue // skip self
-		}
-		if w.WidgetType == "SharedCanvas" {
-			continue // skip SharedCanvas in results
-		}
-		if Touches(srcRect, WidgetBoundingBox(w)) {
-			// Normalize ParentID if it matches SharedCanvas
-			if sharedCanvasID != "" && w.ParentID == sharedCanvasID {
-				w.ParentID = ""
-			}
-			touched = append(touched, w)
-		}
-	}
-	// Normalize ParentID for the container as well
-	if sharedCanvasID != "" && srcWidget.ParentID == sharedCanvasID {
-		srcWidget.ParentID = ""
-	}
-	return WidgetZone{CanvasID: canvasID, SharedCanvasID: sharedCanvasID, Container: srcWidget, Contents: touched}, nil
+// UnpinWidget unpins a widget.
+func (s *Session) UnpinWidget(ctx context.Context, widgetID string) error {
+path := fmt.Sprintf("widgets/%s/unpin", widgetID)
+return s.doRequest(ctx, "POST", path, nil, nil, nil, false)
 }

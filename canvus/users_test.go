@@ -42,7 +42,9 @@ func TestUserLifecycle(t *testing.T) {
 	}
 
 	// Login as user
-	testClient := NewSession(admin.BaseURL)
+	config := DefaultSessionConfig()
+	config.BaseURL = admin.BaseURL
+	testClient := NewSession(config)
 	err = testClient.Login(ctx, email, password)
 	if err != nil {
 		t.Errorf("failed to login as user: %v", err)
@@ -65,7 +67,9 @@ func TestUserLoginInvalid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load test settings: %v", err)
 	}
-	testClient := NewSession(ts.APIBaseURL)
+	config := DefaultSessionConfig()
+	config.BaseURL = ts.APIBaseURL
+	testClient := NewSession(config)
 	err = testClient.Login(ctx, "nonexistent@example.com", "wrongpassword")
 	if err == nil {
 		t.Fatalf("expected error for invalid login, got nil")

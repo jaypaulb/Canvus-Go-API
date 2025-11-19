@@ -162,7 +162,7 @@ func TestWidgetsContainId(t *testing.T) {
 			if w.WidgetType == "SharedCanvas" {
 				continue // skip SharedCanvas in results
 			}
-			if WidgetContainsRect(srcRect, w) {
+			if Contains(srcRect, WidgetBoundingBox(w)) {
 				if sharedCanvasID != "" && w.ParentID == sharedCanvasID {
 					w.ParentID = ""
 				}

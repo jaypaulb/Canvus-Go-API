@@ -1,0 +1,144 @@
+# Release Validation Workflow
+# Triggered on tag push (v*) to validate releases
+# Runs tests, validates examples, and verifies module build
+
+name: Release Validation
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for tag verification
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Verify Go version
+        run: go version
+
+      - name: Verify module
+        run: |
+          go mod verify
+          go mod tidy
+          # Check if go.mod or go.sum changed (would indicate issues)
+          if [[ -n $(git status --porcelain go.mod go.sum) ]]; then
+            echo "ERROR: go.mod or go.sum is not tidy"
+            git diff go.mod go.sum
+            exit 1
+          fi
+
+      - name: Build SDK
+        run: go build ./canvus/...
+
+      - name: Run tests
+        run: go test ./canvus/... -v -race -timeout 5m
+
+      - name: Build all packages
+        run: go build ./...
+
+      - name: Validate examples compile
+        run: |
+          if [ -d "examples" ]; then
+            echo "Validating examples..."
+            for dir in examples/*/; do
+              if [ -d "$dir" ]; then
+                echo "Building examples in $dir"
+                for f in "$dir"*.go; do
+                  if [ -f "$f" ]; then
+                    echo "  Building $f"
+                    go build "$f" || exit 1
+                  fi
+                done
+              fi
+            done
+            echo "All examples compiled successfully"
+          else
+            echo "No examples directory found - skipping example validation"
+          fi
+
+      - name: Validate templates compile
+        run: |
+          if [ -d "templates" ]; then
+            echo "Validating templates..."
+            for f in templates/*.go; do
+              if [ -f "$f" ]; then
+                echo "  Building $f"
+                go build "$f" || exit 1
+              fi
+            done
+            echo "All templates compiled successfully"
+          else
+            echo "No templates directory found - skipping template validation"
+          fi
+
+      - name: Verify tag format
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "Validating tag: $TAG"
+          if [[ ! $TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
+            echo "ERROR: Tag '$TAG' does not follow semantic versioning (vMAJOR.MINOR.PATCH)"
+            exit 1
+          fi
+          echo "Tag format is valid"
+
+      - name: Check CHANGELOG entry
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          if grep -q "\[$VERSION\]" CHANGELOG.md; then
+            echo "Found CHANGELOG entry for version $VERSION"
+          else
+            echo "WARNING: No CHANGELOG entry found for version $VERSION"
+            echo "Please ensure CHANGELOG.md is updated before publishing the release"
+          fi
+
+      - name: Summary
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "## Release Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** $TAG" >> $GITHUB_STEP_SUMMARY
+          echo "**Go Version:** $(go version)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Module verification: Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- SDK build: Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests: Passed" >> $GITHUB_STEP_SUMMARY
+          echo "- Examples: Validated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Release is ready for publication." >> $GITHUB_STEP_SUMMARY
+
+  # Optional: Create GitHub release automatically
+  # Uncomment to enable automatic release creation
+  # create-release:
+  #   name: Create GitHub Release
+  #   needs: validate
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: write
+  #
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Create Release
+  #       uses: softprops/action-gh-release@v1
+  #       with:
+  #         generate_release_notes: true
+  #         draft: true  # Create as draft for manual review

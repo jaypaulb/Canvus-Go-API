@@ -263,3 +263,70 @@ The SDK must support three primary client instantiation patterns:
    - Uses the main client (from settings) to create and activate a new test user.
    - Logs in as the test user to obtain a temporary token (API key/PrivateToken) via `/users/login`.
    - All actions in the session use this token (sent as `
+## SDK Core Enhancements Plan
+
+### 1. Enhanced Error Handling
+- [ ] Define comprehensive error types in `errors.go`
+  - [ ] Add error codes and structured error types
+  - [ ] Implement error wrapping and context propagation
+  - [ ] Add error type assertions and helper functions
+- [ ] Update all API methods to use new error types
+- [ ] Add error handling tests
+
+### 2. Session Management Improvements
+- [ ] Implement token refresh mechanism
+- [ ] Add request retry logic with exponential backoff
+- [ ] Implement circuit breaker pattern
+- [ ] Add connection pooling configuration
+- [ ] Add session tests
+
+### 3. Type System Enhancements
+- [ ] Add validation methods to all request/response types
+- [ ] Add helper methods for common operations (e.g., Point.DistanceTo)
+- [ ] Improve type documentation with examples
+- [ ] Add type conversion utilities
+
+### 4. Documentation Improvements
+- [ ] Add comprehensive godoc comments
+- [ ] Create usage examples for all major features
+- [ ] Add package-level documentation
+- [ ] Document best practices and patterns
+
+### 5. Testing Infrastructure
+- [ ] Add table-driven tests for all API endpoints
+- [ ] Add integration test suite
+- [ ] Add benchmarks for performance-critical paths
+- [ ] Add test helpers and fixtures
+
+### 6. CI/CD Pipeline
+- [ ] Set up GitHub Actions for testing
+- [ ] Add code coverage reporting
+- [ ] Add automated documentation generation
+- [ ] Set up release automation
+
+## Implementation Notes
+
+### Branching Strategy
+- Created new branch: `feature/enhance-sdk-core`
+- Will create feature branches for each major enhancement
+- PRs will be created for each feature
+
+### Code Style
+- Follow Go 1.21+ best practices
+- Use gofumpt for code formatting
+- Follow the project's existing code style
+
+### Testing Strategy
+- Unit tests for all new code
+- Integration tests for end-to-end scenarios
+- Benchmarks for performance-critical code
+- Test coverage target: 80%+
+
+## Progress Tracking
+
+### Current Sprint (2024-10-15 to 2024-10-22)
+- [ ] Enhanced error handling implementation
+- [ ] Session management improvements
+- [ ] Initial test coverage improvements
+
+---
