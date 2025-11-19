@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Verify dependencies
+        run: |
+          go mod verify
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Build SDK
+        run: go build ./canvus/...
+
+      - name: Build examples
+        run: |
+          for example in examples/*/; do
+            if [ -d "$example" ]; then
+              for file in "$example"*.go; do
+                if [ -f "$file" ]; then
+                  echo "Building $file"
+                  go build -o /dev/null "$file"
+                fi
+              done
+            fi
+          done
+
+      - name: Build templates
+        run: |
+          for template in templates/*.go; do
+            if [ -f "$template" ]; then
+              echo "Building $template"
+              go build -o /dev/null "$template"
+            fi
+          done
+
+      - name: Run tests
+        run: go test ./canvus/... -race -short -v
+
+      - name: Check formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "Go code is not formatted:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./canvus/...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=5m
