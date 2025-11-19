@@ -1,5 +1,6 @@
 # Development and AI assistant files
 .claude/
+CLAUDE.md
 agent-os/
 settings.json
 cli-repo-template/
