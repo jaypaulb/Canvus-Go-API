@@ -1,3 +1,9 @@
+# Development and AI assistant files
+.claude/
+agent-os/
+settings.json
+cli-repo-template/
+
 # Ignore Cursor, reference, and old code directories
 .cursor/
 .cursor
