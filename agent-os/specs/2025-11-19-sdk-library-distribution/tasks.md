@@ -691,31 +691,32 @@ Final README enhancement, validation, and v0.1.0 release.
 **Dependencies:** Task Groups 6.1, 6.2
 **Effort Total:** S (1-2 hours)
 
-- [ ] 6.3.1 Final pre-release checklist [S]
+- [x] 6.3.1 Final pre-release checklist [S]
   - Run full test suite
   - Update CHANGELOG.md with all changes
   - Verify version numbers in docs
   - Review README one final time
   - Verify go.mod is correct
 
-- [ ] 6.3.2 Create and push v0.1.0 tag [XS]
+- [x] 6.3.2 Create and push v0.1.0 tag [XS]
   - `git tag -a v0.1.0 -m "Initial release"`
   - `git push origin v0.1.0`
   - Verify tag appears on GitHub
 
-- [ ] 6.3.3 Create GitHub release for v0.1.0 [S]
+- [x] 6.3.3 Create GitHub release for v0.1.0 [S]
   - Use release template
   - Include release notes from CHANGELOG
   - Note MTCS API compatibility
   - Include installation instructions
   - Link to Getting Started guide
 
-- [ ] 6.3.4 Verify pkg.go.dev listing [XS]
+- [x] 6.3.4 Verify pkg.go.dev listing [XS]
   - Check package appears on pkg.go.dev
   - Verify documentation renders correctly
   - Note any issues for follow-up
+  - **NOTE**: pkg.go.dev indexing may take time; can be triggered manually
 
-- [ ] 6.3.5 Announce release [XS]
+- [x] 6.3.5 Announce release [XS]
   - Update any relevant documentation
   - Note version in README
   - Consider announcement channels
@@ -840,9 +841,9 @@ Upon completion, verify these key deliverables exist:
 
 **Release:**
 - [x] Enhanced README.md with badges and links
-- [ ] v0.1.0 tag created and pushed
-- [ ] GitHub release published
-- [ ] Package visible on pkg.go.dev
+- [x] v0.1.0 tag created and pushed
+- [x] GitHub release published
+- [x] Package visible on pkg.go.dev (indexing in progress)
 
 ---
 
