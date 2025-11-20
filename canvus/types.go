@@ -1,4 +1,20 @@
 // Package canvus contains shared types for the Canvus SDK.
+//
+// COLOR FORMAT:
+// All color values in the Canvus API use the RRGGBBAA format (8 uppercase hex digits).
+// - RR: Red component (00-FF)
+// - GG: Green component (00-FF)
+// - BB: Blue component (00-FF)
+// - AA: Alpha/transparency component (00-FF, where 00=transparent, FF=opaque)
+//
+// Examples:
+//   - "FF0000FF" = opaque red
+//   - "00FF00FF" = opaque green
+//   - "0000FFFF" = opaque blue
+//   - "FFFFFF80" = 50% transparent white
+//   - "00000000" = fully transparent black
+//
+// Note: Colors are ALWAYS uppercase when sent to and received from the API.
 package canvus
 
 import (
@@ -127,8 +143,8 @@ type Note struct {
 	ID              string  `json:"id"`
 	Text            string  `json:"text"`
 	Title           string  `json:"title"`
-	BackgroundColor string  `json:"background_color"`
-	Depth           int     `json:"depth"`
+	BackgroundColor string  `json:"background_color"` // RRGGBBAA format (e.g., "FFFFFFFF" = opaque white)
+	Depth           float64 `json:"depth"`
 	Location        *Point  `json:"location,omitempty"`
 	ParentID        string  `json:"parent_id"`
 	Pinned          bool    `json:"pinned"`
@@ -151,33 +167,68 @@ type Image struct {
 	Location         *Point  `json:"location,omitempty"`
 	State            string  `json:"state"`
 	WidgetType       string  `json:"widget_type"`
-	Depth            int     `json:"depth"`
+	Depth            float64 `json:"depth"`
 }
 
 // PDF represents a PDF asset in the Canvus system.
 type PDF struct {
-	ID   string
-	Name string
-	// ... other fields
+	ID               string  `json:"id"`
+	Hash             string  `json:"hash"`
+	Title            string  `json:"title"`
+	OriginalFilename string  `json:"original_filename"`
+	ParentID         string  `json:"parent_id"`
+	Pinned           bool    `json:"pinned"`
+	Scale            float64 `json:"scale"`
+	Size             *Size   `json:"size,omitempty"`
+	Location         *Point  `json:"location,omitempty"`
+	State            string  `json:"state"`
+	WidgetType       string  `json:"widget_type"`
+	Depth            float64 `json:"depth"`
+	Index            int     `json:"index"`
 }
 
 // Video represents a video asset in the Canvus system.
 type Video struct {
-	ID   string
-	Name string
-	// ... other fields
+	ID               string  `json:"id"`
+	Hash             string  `json:"hash"`
+	Title            string  `json:"title"`
+	OriginalFilename string  `json:"original_filename"`
+	ParentID         string  `json:"parent_id"`
+	Pinned           bool    `json:"pinned"`
+	Scale            float64 `json:"scale"`
+	Size             *Size   `json:"size,omitempty"`
+	Location         *Point  `json:"location,omitempty"`
+	State            string  `json:"state"`
+	WidgetType       string  `json:"widget_type"`
+	Depth            float64 `json:"depth"`
+	PlaybackPosition float64 `json:"playback_position"`
+	PlaybackState    string  `json:"playback_state"`
 }
 
 type Widget struct {
+	ID          string       `json:"id"`
+	WidgetType  string       `json:"widget_type"`
+	ParentID    string       `json:"parent_id"`
+	Location    *Point       `json:"location,omitempty"`
+	Size        *Size        `json:"size,omitempty"`
+	Pinned      bool         `json:"pinned"`
+	Scale       float64      `json:"scale"`
+	State       string       `json:"state"`
+	Depth       float64      `json:"depth"`
+	Annotations []Annotation `json:"annotations,omitempty"`
+}
+
+// Annotation represents a drawing annotation (stroke) on a widget.
+// Annotations are typically retrieved via ListWidgets with the annotations parameter.
+type Annotation struct {
 	ID         string  `json:"id"`
-	WidgetType string  `json:"widget_type"`
-	ParentID   string  `json:"parent_id"`
-	Location   *Point  `json:"location,omitempty"`
-	Size       *Size   `json:"size,omitempty"`
-	Pinned     bool    `json:"pinned"`
-	Scale      float64 `json:"scale"`
-	State      string  `json:"state"`
-	Depth      int     `json:"depth"`
+	WidgetType string  `json:"widget_type"` // Always "Annotation"
+	ParentID   string  `json:"parent_id,omitempty"`
+	State      string  `json:"state,omitempty"`
+	Page       int     `json:"page,omitempty"`
+	Depth      float64 `json:"depth"`
+	LineColor  string  `json:"line_color"` // RRGGBBAA format (e.g., "FF0000FF" = opaque red)
+	Points     string  `json:"points"`     // base64 encoded Float32Array of spline control points
 }
 
 type Anchor struct {
@@ -191,19 +242,30 @@ type Anchor struct {
 	Location    *Point  `json:"location,omitempty"`
 	State       string  `json:"state"`
 	WidgetType  string  `json:"widget_type"`
-	Depth       int     `json:"depth"`
+	Depth       float64 `json:"depth"`
 }
 
 type Browser struct {
-	ID string
-	// ... other fields
+	ID                     string  `json:"id"`
+	WidgetType             string  `json:"widget_type"`
+	Depth                  float64 `json:"depth"`
+	Location               *Point  `json:"location,omitempty"`
+	MainFrameScrollOffset  *Point  `json:"main_frame_scroll_offset,omitempty"`
+	ParentID               string  `json:"parent_id"`
+	Pinned                 bool    `json:"pinned"`
+	Scale                  float64 `json:"scale"`
+	Size                   *Size   `json:"size,omitempty"`
+	State                  string  `json:"state"`
+	Title                  string  `json:"title"`
+	TransparentMode        bool    `json:"transparent_mode"`
+	URL                    string  `json:"url"`
 }
 
 type Connector struct {
 	ID         string        `json:"id"`
 	Src        *ConnectorEnd `json:"src,omitempty"`
 	Dst        *ConnectorEnd `json:"dst,omitempty"`
-	LineColor  string        `json:"line_color"`
+	LineColor  string        `json:"line_color"` // RRGGBBAA format (e.g., "000000FF" = opaque black)
 	LineWidth  int           `json:"line_width"`
 	State      string        `json:"state"`
 	Type       string        `json:"type"`
@@ -218,21 +280,41 @@ type ConnectorEnd struct {
 }
 
 type Background struct {
-	Type string
-	// ... other fields
+	Type            string                 `json:"type"`
+	BackgroundColor string                 `json:"background_color,omitempty"` // RRGGBBAA format
+	Haze            *BackgroundHaze        `json:"haze,omitempty"`
+	Grid            *BackgroundGrid        `json:"grid,omitempty"`
+	Image           *BackgroundImage       `json:"image,omitempty"`
+}
+
+type BackgroundHaze struct {
+	Color1 string  `json:"color1"` // RRGGBBAA format (e.g., "E0E0E0FF" = light gray)
+	Color2 string  `json:"color2"` // RRGGBBAA format (e.g., "F0F0F0FF" = lighter gray)
+	Speed  float64 `json:"speed"`
+	Scale  float64 `json:"scale"`
+}
+
+type BackgroundGrid struct {
+	Visible bool   `json:"visible"`
+	Color   string `json:"color"` // RRGGBBAA format (e.g., "CCCCCCFF" = gray)
+}
+
+type BackgroundImage struct {
+	Hash string `json:"hash"`
+	Fit  string `json:"fit"`
 }
 
 type ColorPreset struct {
-	Name string
-	// ... other fields
+	Name string `json:"name"`
 }
 
 // ColorPresets represents the color presets for a canvas.
+// All color arrays contain RRGGBBAA format strings (e.g., "FF0000FF", "00FF00FF").
 type ColorPresets struct {
-	Annotation     []string `json:"annotation"`
-	Connector      []string `json:"connector"`
-	NoteBackground []string `json:"note_background"`
-	NoteText       []string `json:"note_text"`
+	Annotation     []string `json:"annotation"`     // Annotation stroke colors
+	Connector      []string `json:"connector"`      // Connector line colors
+	NoteBackground []string `json:"note_background"` // Note background colors
+	NoteText       []string `json:"note_text"`       // Note text colors
 }
 
 // MipmapInfo represents mipmap information for an asset.
@@ -246,8 +328,17 @@ type MipmapInfo struct {
 }
 
 type VideoInput struct {
-	ID string
-	// ... other fields
+	ID         string  `json:"id"`
+	WidgetType string  `json:"widget_type"`
+	Depth      float64 `json:"depth"`
+	HostID     string  `json:"host-id"`
+	Location   *Point  `json:"location,omitempty"`
+	ParentID   string  `json:"parent_id"`
+	Pinned     bool    `json:"pinned"`
+	Scale      float64 `json:"scale"`
+	Size       *Size   `json:"size,omitempty"`
+	Source     string  `json:"source"`
+	State      string  `json:"state"`
 }
 
 // VideoOutput represents a video output channel on a client or canvas.
@@ -387,12 +478,6 @@ type HazeSettings struct {
 type GridSettings struct {
 	Visible bool   `json:"visible"`
 	Color   string `json:"color"`
-}
-
-// BackgroundImage represents image background settings.
-type BackgroundImage struct {
-	Hash string `json:"hash"`
-	Fit  string `json:"fit"`
 }
 
 type CanvasUserPermission struct {

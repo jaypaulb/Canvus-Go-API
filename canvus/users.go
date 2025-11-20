@@ -3,8 +3,6 @@ package canvus
 import (
 	"context"
 	"fmt"
-	"runtime/debug"
-	"time"
 )
 
 // User represents a user in the Canvus system.
@@ -70,9 +68,6 @@ func (s *Session) GetUser(ctx context.Context, id int64) (*User, error) {
 
 // CreateUser creates a new user in the Canvus API.
 func (s *Session) CreateUser(ctx context.Context, req CreateUserRequest) (*User, error) {
-	marker := time.Now().UnixNano()
-	fmt.Printf("[DEBUG] CreateUser called: marker=%d\n%s\n", marker, debug.Stack())
-	ctx = context.WithValue(ctx, "createUserMarker", marker)
 	var user User
 	err := s.doRequest(ctx, "POST", "users", req, &user, nil, false)
 	if err != nil {

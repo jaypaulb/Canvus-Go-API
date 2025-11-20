@@ -54,6 +54,21 @@ func (s *Session) CreateAccessToken(ctx context.Context, userID int64, req Creat
 	return &token, nil
 }
 
+// UpdateAccessToken updates an access token description for a user in the Canvus API.
+func (s *Session) UpdateAccessToken(ctx context.Context, userID int64, tokenID string, description string) (*AccessToken, error) {
+	if tokenID == "" {
+		return nil, fmt.Errorf("UpdateAccessToken: tokenID is required")
+	}
+	var token AccessToken
+	endpoint := fmt.Sprintf("users/%d/access-tokens/%s", userID, tokenID)
+	req := map[string]interface{}{"description": description}
+	err := s.doRequest(ctx, "PATCH", endpoint, req, &token, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateAccessToken: %w", err)
+	}
+	return &token, nil
+}
+
 // DeleteAccessToken deletes an access token by ID for a user in the Canvus API.
 func (s *Session) DeleteAccessToken(ctx context.Context, userID int64, tokenID string) error {
 	if tokenID == "" {

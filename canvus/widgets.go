@@ -7,11 +7,19 @@ import (
 )
 
 // ListWidgets retrieves all widgets for a given canvas. If filter is non-nil, results are filtered client-side.
+// If includeAnnotations is true, the annotations array is populated for each widget.
 // This endpoint is read-only: POST, PATCH, DELETE are not supported on /canvases/{id}/widgets.
-func (s *Session) ListWidgets(ctx context.Context, canvasID string, filter *Filter) ([]Widget, error) {
+func (s *Session) ListWidgets(ctx context.Context, canvasID string, filter *Filter, includeAnnotations ...bool) ([]Widget, error) {
 	var widgets []Widget
 	path := fmt.Sprintf("canvases/%s/widgets", canvasID)
-	err := s.doRequest(ctx, "GET", path, nil, &widgets, nil, false)
+
+	// Build query parameters
+	var queryParams map[string]string
+	if len(includeAnnotations) > 0 && includeAnnotations[0] {
+		queryParams = map[string]string{"annotations": "1"}
+	}
+
+	err := s.doRequest(ctx, "GET", path, nil, &widgets, queryParams, false)
 	if err != nil {
 		return nil, fmt.Errorf("ListWidgets: %w", err)
 	}
@@ -33,7 +41,7 @@ func (s *Session) GetWidget(ctx context.Context, canvasID, widgetID string) (*Wi
 }
 
 // CreateWidget creates a widget of the specified type by dispatching to the correct resource-specific method.
-// Supported widget types: "note", "anchor", "image", "pdf", "video", "connector".
+// Supported widget types: "note", "anchor", "browser", "image", "pdf", "video", "connector".
 // For image/pdf/video, req must be a multipart body (io.Reader) and contentType must be provided.
 // For other types, req is a map[string]interface{}.
 // Returns the created widget as *Widget, or an error if the type is unsupported or the operation fails.
@@ -76,6 +84,22 @@ func (s *Session) CreateWidget(ctx context.Context, canvasID string, req interfa
 				Scale:      anchor.Scale,
 				State:      anchor.State,
 				Depth:      anchor.Depth,
+			}, nil
+		case "browser":
+			browser, err := s.CreateBrowser(ctx, canvasID, m)
+			if err != nil {
+				return nil, err
+			}
+			return &Widget{
+				ID:         browser.ID,
+				WidgetType: browser.WidgetType,
+				ParentID:   browser.ParentID,
+				Location:   browser.Location,
+				Size:       browser.Size,
+				Pinned:     browser.Pinned,
+				Scale:      browser.Scale,
+				State:      browser.State,
+				Depth:      browser.Depth,
 			}, nil
 		case "connector":
 			connector, err := s.CreateConnector(ctx, canvasID, m)
@@ -165,6 +189,22 @@ func (s *Session) UpdateWidget(ctx context.Context, canvasID, widgetID string, r
 			State:      anchor.State,
 			Depth:      anchor.Depth,
 		}, nil
+	case "browser":
+		browser, err := s.UpdateBrowser(ctx, canvasID, widgetID, req)
+		if err != nil {
+			return nil, err
+		}
+		return &Widget{
+			ID:         browser.ID,
+			WidgetType: browser.WidgetType,
+			ParentID:   browser.ParentID,
+			Location:   browser.Location,
+			Size:       browser.Size,
+			Pinned:     browser.Pinned,
+			Scale:      browser.Scale,
+			State:      browser.State,
+			Depth:      browser.Depth,
+		}, nil
 	case "image":
 		image, err := s.UpdateImage(ctx, canvasID, widgetID, req)
 		if err != nil {
@@ -212,6 +252,8 @@ func (s *Session) DeleteWidget(ctx context.Context, canvasID, widgetID, widgetTy
 		return s.DeleteNote(ctx, canvasID, widgetID)
 	case "anchor":
 		return s.DeleteAnchor(ctx, canvasID, widgetID)
+	case "browser":
+		return s.DeleteBrowser(ctx, canvasID, widgetID)
 	case "image":
 		return s.DeleteImage(ctx, canvasID, widgetID)
 	case "pdf":
@@ -326,8 +368,6 @@ func WidgetsContainId(ctx context.Context, s *Session, canvasID string, widgetID
 	var contained []Widget
 	for _, w := range widgets {
 		if w.ID == srcWidget.ID {
-			// Debug log for skipping self
-			fmt.Printf("[CONTAINS] Skipping self: %s\n", w.ID)
 			continue // skip self
 		}
 		if w.WidgetType == "SharedCanvas" {
