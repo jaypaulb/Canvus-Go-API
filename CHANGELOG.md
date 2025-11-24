@@ -8,7 +8,11 @@ and this project adheres to the [Versioning](docs/VERSIONING.md) scheme document
 ## [Unreleased]
 
 ### Added
-- Nothing yet
+- OpenAPI specification now includes complete license management endpoints:
+  - `POST /license` - Install a new license key
+  - `GET /license/request` - Get offline activation request token
+  - `POST /license/activate` - Activate license with offline activation key
+  - `POST /server-config/reload-certs` - Reload TLS certificates without restart
 
 ### Changed
 - Nothing yet

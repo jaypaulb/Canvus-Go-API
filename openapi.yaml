@@ -73,10 +73,14 @@ tags:
     description: Video widget operations
   - name: Anchors
     description: Anchor widget operations
+  - name: Browsers
+    description: Browser widget operations
   - name: Connectors
     description: Connector widget operations
   - name: Clients
     description: Client device management
+  - name: Workspaces
+    description: Client workspace management
   - name: Video I/O
     description: Video input/output management
   - name: System
@@ -2110,6 +2114,44 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  # Upload
+  /canvases/{canvasId}/uploads-folder:
+    post:
+      tags:
+        - Assets
+      summary: Upload note or asset
+      description: Uploads a note or asset file to the canvas uploads folder. Accepts multipart/form-data with a 'json' part for notes or a 'data' part (with optional 'json' part) for assets.
+      operationId: uploadToCanvas
+      parameters:
+        - $ref: '#/components/parameters/CanvasIdPath'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                json:
+                  type: string
+                  description: JSON metadata for the note or asset
+                data:
+                  type: string
+                  format: binary
+                  description: Binary file data for assets (images, PDFs, videos)
+      responses:
+        '201':
+          description: Note or asset uploaded successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Note'
+                  - $ref: '#/components/schemas/Asset'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   # Anchors
   /canvases/{canvasId}/anchors:
     get:
@@ -2243,6 +2285,176 @@ paths:
       responses:
         '200':
           description: Anchor deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Browsers
+  /canvases/{canvasId}/browsers:
+    get:
+      tags:
+        - Browsers
+      summary: List browsers
+      description: Lists all browser widgets on a canvas.
+      operationId: listBrowsers
+      parameters:
+        - $ref: '#/components/parameters/CanvasIdPath'
+      responses:
+        '200':
+          description: List of browsers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Browser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Browsers
+      summary: Create browser
+      description: Creates a new browser widget on a canvas.
+      operationId: createBrowser
+      parameters:
+        - $ref: '#/components/parameters/CanvasIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+                - location
+                - size
+              properties:
+                url:
+                  type: string
+                  description: The URL to load in the browser
+                location:
+                  $ref: '#/components/schemas/Point'
+                size:
+                  $ref: '#/components/schemas/Size'
+                title:
+                  type: string
+                  description: Browser window title
+                scale:
+                  type: number
+                  format: double
+                  description: Browser zoom scale
+                transparent_mode:
+                  type: boolean
+                  description: Whether to use transparent mode
+      responses:
+        '201':
+          description: Browser created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Browser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /canvases/{canvasId}/browsers/{browserId}:
+    get:
+      tags:
+        - Browsers
+      summary: Get browser by ID
+      description: Retrieves a specific browser widget.
+      operationId: getBrowser
+      parameters:
+        - $ref: '#/components/parameters/CanvasIdPath'
+        - name: browserId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Browser details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Browser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - Browsers
+      summary: Update browser
+      description: Updates a browser widget.
+      operationId: updateBrowser
+      parameters:
+        - $ref: '#/components/parameters/CanvasIdPath'
+        - name: browserId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  description: The URL to load in the browser
+                location:
+                  $ref: '#/components/schemas/Point'
+                size:
+                  $ref: '#/components/schemas/Size'
+                title:
+                  type: string
+                  description: Browser window title
+                scale:
+                  type: number
+                  format: double
+                  description: Browser zoom scale
+                transparent_mode:
+                  type: boolean
+                  description: Whether to use transparent mode
+                main_frame_scroll_offset:
+                  $ref: '#/components/schemas/Point'
+      responses:
+        '200':
+          description: Browser updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Browser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Browsers
+      summary: Delete browser
+      description: Deletes a browser widget.
+      operationId: deleteBrowser
+      parameters:
+        - $ref: '#/components/parameters/CanvasIdPath'
+        - name: browserId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Browser deleted
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -2599,6 +2811,120 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /clients/{clientId}/workspaces:
+    get:
+      tags:
+        - Workspaces
+      summary: List workspaces
+      description: Lists all workspaces for a client device.
+      operationId: listWorkspaces
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+      responses:
+        '200':
+          description: List of workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /clients/{clientId}/workspaces/{workspaceIndex}:
+    get:
+      tags:
+        - Workspaces
+      summary: Get workspace
+      description: Retrieves a specific workspace by index.
+      operationId: getWorkspace
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+        - name: workspaceIndex
+          in: path
+          required: true
+          description: The workspace index (0-based)
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Workspace details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - Workspaces
+      summary: Update workspace
+      description: Updates workspace parameters such as pinned state, info panel visibility, or viewport.
+      operationId: updateWorkspace
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+        - name: workspaceIndex
+          in: path
+          required: true
+          description: The workspace index (0-based)
+          schema:
+            type: integer
+            minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkspaceRequest'
+      responses:
+        '200':
+          description: Workspace updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /clients/{clientId}/workspaces/{workspaceIndex}/open-canvas:
+    post:
+      tags:
+        - Workspaces
+      summary: Open canvas on workspace
+      description: Opens a canvas on the specified workspace. Optionally centers the viewport on specified coordinates or widget.
+      operationId: openCanvasOnWorkspace
+      parameters:
+        - $ref: '#/components/parameters/ClientIdPath'
+        - name: workspaceIndex
+          in: path
+          required: true
+          description: The workspace index (0-based)
+          schema:
+            type: integer
+            minimum: 0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenCanvasRequest'
+      responses:
+        '200':
+          description: Canvas opened successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /clients/{clientId}/video-inputs:
     get:
       tags:
@@ -2723,6 +3049,92 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+    post:
+      tags:
+        - System
+      summary: Install license
+      description: Installs a new license key on the server.
+      operationId: installLicense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - key
+              properties:
+                key:
+                  type: string
+                  description: License key to install
+            example:
+              key: "XXXX-XXXX-XXXX-XXXX"
+      responses:
+        '200':
+          description: License installed successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - requires admin privileges
+
+  /license/request:
+    get:
+      tags:
+        - System
+      summary: Get offline activation request
+      description: Retrieves the offline activation request token for license activation.
+      operationId: getActivationRequest
+      responses:
+        '200':
+          description: Activation request token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  request:
+                    type: string
+                    description: Offline activation request token
+              example:
+                request: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - requires admin privileges
+
+  /license/activate:
+    post:
+      tags:
+        - System
+      summary: Activate license offline
+      description: Activates the license using an offline activation key.
+      operationId: activateLicense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - key
+              properties:
+                key:
+                  type: string
+                  description: Offline activation key
+            example:
+              key: "ACTIVATION-KEY-XXXX-XXXX"
+      responses:
+        '200':
+          description: License activated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - requires admin privileges
+
   /server-config:
     get:
       tags:
@@ -2778,6 +3190,24 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           description: Email sending failed
+
+  /server-config/reload-certs:
+    post:
+      tags:
+        - System
+      summary: Reload TLS certificates
+      description: Reloads the server's TLS certificates without restarting the server.
+      operationId: reloadCerts
+      responses:
+        '200':
+          description: Certificates reloaded successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - requires admin privileges
+        '500':
+          description: Certificate reload failed
+
 
   # Audit Log
   /audit-log:
@@ -3624,45 +4054,6 @@ components:
           type: integer
           description: Z-order depth for layering
 
-    Point:
-      type: object
-      description: 2D point coordinates
-      properties:
-        x:
-          type: number
-          description: X coordinate
-        y:
-          type: number
-          description: Y coordinate
-
-    Size:
-      type: object
-      description: Width and height dimensions
-      properties:
-        width:
-          type: number
-          description: Width in canvas units
-        height:
-          type: number
-          description: Height in canvas units
-
-    Rectangle:
-      type: object
-      description: Rectangle with position and size
-      properties:
-        x:
-          type: number
-          description: X coordinate of top-left corner
-        y:
-          type: number
-          description: Y coordinate of top-left corner
-        width:
-          type: number
-          description: Width
-        height:
-          type: number
-          description: Height
-
     Note:
       type: object
       description: Note widget for text content
@@ -3729,6 +4120,30 @@ components:
         scale:
           type: number
           description: Initial scale factor
+
+    Asset:
+      type: object
+      description: Generic asset metadata returned from upload operations
+      properties:
+        id:
+          type: string
+          description: Asset ID
+        hash:
+          type: string
+          description: Asset hash for content-addressable storage
+        filename:
+          type: string
+          description: Original filename
+        content_type:
+          type: string
+          description: MIME type of the asset
+        size:
+          type: integer
+          description: File size in bytes
+        created_at:
+          type: string
+          format: date-time
+          description: When the asset was created
 
     Image:
       type: object
@@ -3845,6 +4260,54 @@ components:
           $ref: '#/components/schemas/Point'
         size:
           $ref: '#/components/schemas/Size'
+
+    Browser:
+      type: object
+      description: Browser widget for displaying web content
+      required:
+        - id
+        - widget_type
+        - url
+      properties:
+        id:
+          type: string
+          description: Widget ID
+        widget_type:
+          type: string
+          enum: [browser]
+          description: Always "browser"
+        depth:
+          type: number
+          format: double
+          description: Z-order depth
+        location:
+          $ref: '#/components/schemas/Point'
+        main_frame_scroll_offset:
+          $ref: '#/components/schemas/Point'
+        parent_id:
+          type: string
+          description: Parent widget ID
+        pinned:
+          type: boolean
+          description: Whether pinned
+        scale:
+          type: number
+          format: double
+          description: Browser zoom scale
+        size:
+          $ref: '#/components/schemas/Size'
+        state:
+          type: string
+          description: Widget state
+        title:
+          type: string
+          description: Browser window title
+        transparent_mode:
+          type: boolean
+          description: Whether to use transparent mode
+        url:
+          type: string
+          description: The URL loaded in the browser
 
     Connector:
       type: object
@@ -4005,6 +4468,154 @@ components:
         name:
           type: string
           description: New client name
+
+    Workspace:
+      type: object
+      description: Client workspace information
+      required:
+        - canvas_id
+        - index
+        - info_panel_visible
+        - pinned
+        - server_id
+        - state
+        - user
+        - workspace_name
+        - workspace_state
+      properties:
+        canvas_id:
+          type: string
+          description: ID of the canvas currently open in this workspace
+        canvas_size:
+          $ref: '#/components/schemas/Size'
+        index:
+          type: integer
+          description: Workspace index (0-based)
+        info_panel_visible:
+          type: boolean
+          description: Whether the info panel is visible
+        location:
+          $ref: '#/components/schemas/Point'
+        pinned:
+          type: boolean
+          description: Whether the workspace is pinned
+        server_id:
+          type: string
+          description: Server ID
+        size:
+          $ref: '#/components/schemas/Size'
+        state:
+          type: string
+          description: Workspace state
+        user:
+          type: string
+          description: User email associated with workspace
+        view_rectangle:
+          $ref: '#/components/schemas/Rectangle'
+        workspace_name:
+          type: string
+          description: Workspace name
+        workspace_state:
+          type: string
+          description: Workspace state indicator
+
+    UpdateWorkspaceRequest:
+      type: object
+      description: Payload for updating workspace parameters
+      properties:
+        info_panel_visible:
+          type: boolean
+          description: Set info panel visibility
+        pinned:
+          type: boolean
+          description: Set pinned state
+        view_rectangle:
+          $ref: '#/components/schemas/Rectangle'
+
+    OpenCanvasRequest:
+      type: object
+      description: Payload for opening a canvas on a workspace
+      required:
+        - canvas_id
+      properties:
+        canvas_id:
+          type: string
+          description: ID of the canvas to open
+        server_id:
+          type: string
+          description: Optional server ID if opening canvas from remote server
+        user_email:
+          type: string
+          description: Optional user email for authentication
+        center_x:
+          type: number
+          format: double
+          description: Optional X coordinate to center viewport
+        center_y:
+          type: number
+          format: double
+          description: Optional Y coordinate to center viewport
+        widget_id:
+          type: string
+          description: Optional widget ID to center viewport on
+
+    Size:
+      type: object
+      description: Width and height dimensions
+      required:
+        - width
+        - height
+      properties:
+        width:
+          type: number
+          format: double
+          description: Width
+        height:
+          type: number
+          format: double
+          description: Height
+
+    Point:
+      type: object
+      description: X and Y coordinates
+      required:
+        - x
+        - y
+      properties:
+        x:
+          type: number
+          format: double
+          description: X coordinate
+        y:
+          type: number
+          format: double
+          description: Y coordinate
+
+    Rectangle:
+      type: object
+      description: Rectangular region defined by position and dimensions
+      required:
+        - x
+        - y
+        - width
+        - height
+      properties:
+        x:
+          type: number
+          format: double
+          description: X coordinate of top-left corner
+        y:
+          type: number
+          format: double
+          description: Y coordinate of top-left corner
+        width:
+          type: number
+          format: double
+          description: Width
+        height:
+          type: number
+          format: double
+          description: Height
 
     ServerInfo:
       type: object
