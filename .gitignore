@@ -4,6 +4,11 @@ CLAUDE.md
 agent-os/
 settings.json
 cli-repo-template/
+CLEANUP_SUMMARY.md
+
+# Cleanup and temporary directories
+dross/
+test_files/
 
 # Ignore Cursor, reference, and old code directories
 .cursor/
@@ -102,4 +107,4 @@ go.work
 vendor/
 
 # Go module files (optional, if you want to ignore local changes)
-# go.sum 
+# go.sum

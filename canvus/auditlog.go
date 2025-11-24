@@ -32,3 +32,19 @@ func (s *Session) ListAuditEvents(ctx context.Context, opts *AuditLogOptions) ([
 	}
 	return events, nil
 }
+
+// ExportAuditLog exports the audit log as a CSV file.
+func (s *Session) ExportAuditLog(ctx context.Context, opts *AuditLogOptions) ([]byte, error) {
+	query := map[string]string{}
+	if opts != nil {
+		if opts.PerPage > 0 {
+			query["per_page"] = fmt.Sprintf("%d", opts.PerPage)
+		}
+	}
+	var data []byte
+	err := s.doRequest(ctx, "GET", "audit-log/export-csv", nil, &data, query, true)
+	if err != nil {
+		return nil, fmt.Errorf("ExportAuditLog: %w", err)
+	}
+	return data, nil
+}

@@ -1,6 +1,6 @@
 # Canvus Go SDK Compatibility Guide
 
-This document describes version compatibility between the Canvus Go SDK and the MTCS (Multi-Touch Collaboration System) API, known quirks and workarounds, and the process for handling breaking changes.
+This document describes version compatibility between the Canvus Go SDK and the MTCS (MultiTaction Canvus Server) API, known quirks and workarounds, and the process for handling breaking changes.
 
 ## Version Compatibility Matrix
 

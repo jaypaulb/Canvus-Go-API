@@ -50,7 +50,12 @@ func (s *Session) CreateVideo(ctx context.Context, canvasID string, multipartBod
 }
 
 // UpdateVideo updates a video by ID for a given canvas.
+//
+// API Limitation: Size changes via PATCH do not preserve aspect ratio. Content will
+// stretch/distort to match exact requested dimensions. See WarningVideoAspectRatioNotPreserved.
+// Workaround: Calculate correct aspect-ratio-preserving dimensions before calling this method.
 func (s *Session) UpdateVideo(ctx context.Context, canvasID, videoID string, req interface{}) (*Video, error) {
+	warnOnce(WarningVideoAspectRatioNotPreserved)
 	var video Video
 	path := fmt.Sprintf("canvases/%s/videos/%s", canvasID, videoID)
 	err := s.doRequest(ctx, "PATCH", path, req, &video, nil, false)

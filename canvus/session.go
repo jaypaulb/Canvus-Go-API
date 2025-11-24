@@ -847,7 +847,7 @@ func toString(v interface{}) string {
 // Login authenticates a user and stores the returned token and user ID for future requests.
 func (s *Session) Login(ctx context.Context, email, password string) error {
 	loginReq := map[string]string{
-		"email":    email,
+		"username": email,
 		"password": password,
 	}
 	var loginResp struct {

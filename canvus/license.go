@@ -27,3 +27,28 @@ func (s *Session) GetLicenseInfo(ctx context.Context) (*LicenseInfo, error) {
 	}
 	return &info, nil
 }
+
+// GetActivationRequest retrieves the offline activation request token.
+func (s *Session) GetActivationRequest(ctx context.Context) (string, error) {
+	var resp map[string]interface{}
+	err := s.doRequest(ctx, "GET", "license/request", nil, &resp, nil, false)
+	if err != nil {
+		return "", fmt.Errorf("GetActivationRequest: %w", err)
+	}
+	if token, ok := resp["request"].(string); ok {
+		return token, nil
+	}
+	return "", fmt.Errorf("GetActivationRequest: response did not contain 'request' field")
+}
+
+// InstallLicense installs a new license key.
+func (s *Session) InstallLicense(ctx context.Context, key string) error {
+	req := map[string]string{"key": key}
+	return s.doRequest(ctx, "POST", "license", req, nil, nil, false)
+}
+
+// ActivateLicense activates the license with an offline activation key.
+func (s *Session) ActivateLicense(ctx context.Context, activationKey string) error {
+	req := map[string]string{"key": activationKey}
+	return s.doRequest(ctx, "POST", "license/activate", req, nil, nil, false)
+}

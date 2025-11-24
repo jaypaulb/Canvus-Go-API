@@ -58,7 +58,8 @@ func (s *Session) GetGroup(ctx context.Context, id int) (*Group, error) {
 }
 
 // CreateGroup creates a new group in the Canvus API.
-func (s *Session) CreateGroup(ctx context.Context, req CreateGroupRequest) (*Group, error) {
+// req can be CreateGroupRequest or map[string]interface{}
+func (s *Session) CreateGroup(ctx context.Context, req interface{}) (*Group, error) {
 	var group Group
 	err := s.doRequest(ctx, "POST", "groups", req, &group, nil, false)
 	if err != nil {
@@ -67,16 +68,27 @@ func (s *Session) CreateGroup(ctx context.Context, req CreateGroupRequest) (*Gro
 	return &group, nil
 }
 
-// DeleteGroup deletes a group by ID in the Canvus API.
+// UpdateGroup updates a group's information.
+func (s *Session) UpdateGroup(ctx context.Context, groupID int, req map[string]interface{}) (*Group, error) {
+	var group Group
+	err := s.doRequest(ctx, "PATCH", fmt.Sprintf("groups/%d", groupID), req, &group, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("UpdateGroup: %w", err)
+	}
+	return &group, nil
+}
+
+// DeleteGroup deletes a group by ID.
+// in the Canvus API.
 func (s *Session) DeleteGroup(ctx context.Context, id int) error {
 	path := fmt.Sprintf("groups/%d", id)
 	return s.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
 }
 
 // AddUserToGroup adds a user to a group.
-func (s *Session) AddUserToGroup(ctx context.Context, groupID int, userID int) error {
+func (s *Session) AddUserToGroup(ctx context.Context, groupID int, userID int64) error {
 	path := fmt.Sprintf("groups/%d/members", groupID)
-	body := AddUserToGroupRequest{ID: userID}
+	body := map[string]interface{}{"id": userID}
 	return s.doRequest(ctx, "POST", path, body, nil, nil, false)
 }
 
@@ -92,7 +104,7 @@ func (s *Session) ListGroupMembers(ctx context.Context, groupID int) ([]GroupMem
 }
 
 // RemoveUserFromGroup removes a user from a group.
-func (s *Session) RemoveUserFromGroup(ctx context.Context, groupID int, userID int) error {
+func (s *Session) RemoveUserFromGroup(ctx context.Context, groupID int, userID int64) error {
 	path := fmt.Sprintf("groups/%d/members/%d", groupID, userID)
 	return s.doRequest(ctx, "DELETE", path, nil, nil, nil, false)
 }

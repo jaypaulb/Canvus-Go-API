@@ -50,7 +50,12 @@ func (s *Session) CreatePDF(ctx context.Context, canvasID string, multipartBody 
 }
 
 // UpdatePDF updates a PDF by ID for a given canvas.
+//
+// API Limitation: Size changes via PATCH may not work as expected. The bounding box
+// updates but the actual PDF content stays at its original size, creating a visual
+// disconnect. See WarningPDFSizeBug. Workaround: Delete and recreate if different size is needed.
 func (s *Session) UpdatePDF(ctx context.Context, canvasID, pdfID string, req interface{}) (*PDF, error) {
+	warnOnce(WarningPDFSizeBug)
 	var pdf PDF
 	path := fmt.Sprintf("canvases/%s/pdfs/%s", canvasID, pdfID)
 	err := s.doRequest(ctx, "PATCH", path, req, &pdf, nil, false)

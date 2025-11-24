@@ -45,6 +45,7 @@ The SDK provides 109+ methods organized into logical categories. All methods:
 | Method | Description |
 |--------|-------------|
 | `Login(ctx, email, password string) error` | Authenticate with username/password |
+| `SamlLogin(ctx, req SamlLoginRequest) error` | Authenticate with SAML |
 | `Logout(ctx) error` | Invalidate current token |
 | `UserID() int64` | Get authenticated user's ID |
 
@@ -61,8 +62,25 @@ User management including CRUD operations, access tokens, and group membership.
 | `ListUsers(ctx) ([]User, error)` | List all users |
 | `GetUser(ctx, id int64) (*User, error)` | Get user by ID |
 | `CreateUser(ctx, req CreateUserRequest) (*User, error)` | Create new user |
+| `RegisterUser(ctx, req CreateUserRequest) (*User, error)` | Register new user (public) |
+| `ConfirmEmail(ctx, token string) error` | Confirm user email |
 | `UpdateUser(ctx, id int64, req UpdateUserRequest) (*User, error)` | Update user |
+| `ChangeUserEmail(ctx, id string, newEmail string) error` | Change user email |
 | `DeleteUser(ctx, id int64) error` | Delete user |
+| `BlockUser(ctx, id string) error` | Block user |
+| `UnblockUser(ctx, id string) error` | Unblock user |
+| `ApproveUser(ctx, id string) error` | Approve user |
+
+
+### Password Management
+
+| Method | Description |
+|--------|-------------|
+| `CreateResetToken(ctx, email string) error` | Request password reset |
+| `ValidateResetToken(ctx, token string) error` | Validate reset token |
+| `ResetUserPassword(ctx, token, newPassword string) error` | Reset password with token |
+| `SetUserPassword(ctx, id string, newPassword string) error` | Set user password (admin) |
+| `ForcePasswordResetUser(ctx, id string) error` | Force password reset |
 
 ### Access Tokens
 
@@ -80,6 +98,7 @@ User management including CRUD operations, access tokens, and group membership.
 | `ListGroups(ctx) ([]Group, error)` | List all groups |
 | `GetGroup(ctx, id int) (*Group, error)` | Get group by ID |
 | `CreateGroup(ctx, req CreateGroupRequest) (*Group, error)` | Create new group |
+| `UpdateGroup(ctx, id int, req UpdateGroupRequest) (*Group, error)` | Update group |
 | `DeleteGroup(ctx, id int) error` | Delete group |
 | `ListGroupMembers(ctx, groupID int) ([]GroupMember, error)` | List group members |
 | `AddUserToGroup(ctx, groupID int, userID int) error` | Add user to group |
@@ -249,7 +268,9 @@ Widget management covering all widget types and operations.
 | Method | Description |
 |--------|-------------|
 | `ListVideoInputs(ctx, canvasID string) ([]VideoInput, error)` | List video inputs on canvas |
+| `GetVideoInput(ctx, canvasID, inputID string) (*VideoInput, error)` | Get video input |
 | `CreateVideoInput(ctx, canvasID string, req interface{}) (*VideoInput, error)` | Create video input widget |
+| `UpdateVideoInput(ctx, canvasID, inputID string, req interface{}) (*VideoInput, error)` | Update video input |
 | `DeleteVideoInput(ctx, canvasID, inputID string) error` | Delete video input |
 
 ### Color Presets
@@ -289,6 +310,9 @@ Server configuration, information, and administration.
 |--------|-------------|
 | `GetServerInfo(ctx) (*ServerInfo, error)` | Get server version and status |
 | `GetLicenseInfo(ctx) (*LicenseInfo, error)` | Get license information |
+| `GetActivationRequest(ctx) (string, error)` | Get license activation request |
+| `InstallLicense(ctx, licenseKey string) error` | Install license key |
+| `ActivateLicense(ctx, activationKey string) error` | Activate license |
 
 ### Server Configuration
 
@@ -296,6 +320,7 @@ Server configuration, information, and administration.
 |--------|-------------|
 | `GetServerConfig(ctx) (*ServerConfig, error)` | Get server configuration |
 | `UpdateServerConfig(ctx, req ServerConfig) (*ServerConfig, error)` | Update configuration |
+| `ReloadCerts(ctx) error` | Reload server certificates |
 | `SendTestEmail(ctx) error` | Send test email |
 
 ### Audit Log
@@ -303,6 +328,7 @@ Server configuration, information, and administration.
 | Method | Description |
 |--------|-------------|
 | `ListAuditEvents(ctx, opts *AuditLogOptions) ([]AuditEvent, error)` | Query audit events |
+| `ExportAuditLog(ctx, opts *AuditLogOptions) ([]byte, error)` | Export audit log as CSV |
 
 ---
 
@@ -336,7 +362,9 @@ Client device and workspace management.
 | Method | Description |
 |--------|-------------|
 | `ListClientVideoInputs(ctx, clientID string) ([]VideoInputSource, error)` | List video inputs |
+| `GetClientVideoInput(ctx, clientID, inputID string) (*VideoInputSource, error)` | Get video input |
 | `ListVideoOutputs(ctx, clientID string) ([]VideoOutput, error)` | List video outputs |
+| `GetVideoOutput(ctx, clientID, outputID string) (*VideoOutput, error)` | Get video output |
 | `SetVideoOutputSource(ctx, clientID string, index int, req interface{}) error` | Set output source |
 | `UpdateVideoOutput(ctx, canvasID, outputID string, req interface{}) (*VideoOutput, error)` | Update output |
 

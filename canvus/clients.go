@@ -52,7 +52,8 @@ func (c *Session) GetClient(ctx context.Context, id string) (*ClientInfo, error)
 }
 
 // CreateClient creates a new client in the Canvus API.
-func (c *Session) CreateClient(ctx context.Context, req CreateClientRequest) (*ClientInfo, error) {
+// req can be CreateClientRequest or map[string]interface{}
+func (c *Session) CreateClient(ctx context.Context, req interface{}) (*ClientInfo, error) {
 	var client ClientInfo
 	err := c.doRequest(ctx, "POST", "clients", req, &client, nil, false)
 	if err != nil {
@@ -62,7 +63,8 @@ func (c *Session) CreateClient(ctx context.Context, req CreateClientRequest) (*C
 }
 
 // UpdateClient updates an existing client by ID in the Canvus API.
-func (c *Session) UpdateClient(ctx context.Context, id string, req UpdateClientRequest) (*ClientInfo, error) {
+// req can be UpdateClientRequest or map[string]interface{}
+func (c *Session) UpdateClient(ctx context.Context, id string, req interface{}) (*ClientInfo, error) {
 	if id == "" {
 		return nil, fmt.Errorf("UpdateClient: id is required")
 	}

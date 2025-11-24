@@ -58,7 +58,7 @@ func (s *Session) DeleteColorPreset(ctx context.Context, canvasID, name string) 
 // GetColorPresets retrieves the color presets for the specified canvas.
 func (s *Session) GetColorPresets(ctx context.Context, canvasID string) (*ColorPresets, error) {
 	var presets ColorPresets
-	path := fmt.Sprintf("api/v1/canvases/%s/color-presets", canvasID)
+	path := fmt.Sprintf("canvases/%s/colorpresets", canvasID)
 	err := s.doRequest(ctx, "GET", path, nil, &presets, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("GetColorPresets: %w", err)
@@ -67,9 +67,10 @@ func (s *Session) GetColorPresets(ctx context.Context, canvasID string) (*ColorP
 }
 
 // PatchColorPresets updates the color presets for the specified canvas.
-func (s *Session) PatchColorPresets(ctx context.Context, canvasID string, req *ColorPresets) (*ColorPresets, error) {
+// req can be *ColorPresets or map[string]interface{}
+func (s *Session) PatchColorPresets(ctx context.Context, canvasID string, req interface{}) (*ColorPresets, error) {
 	var updated ColorPresets
-	path := fmt.Sprintf("api/v1/canvases/%s/color-presets", canvasID)
+	path := fmt.Sprintf("canvases/%s/colorpresets", canvasID)
 	err := s.doRequest(ctx, "PATCH", path, req, &updated, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("PatchColorPresets: %w", err)

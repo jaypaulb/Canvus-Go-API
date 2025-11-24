@@ -44,7 +44,8 @@ func (s *Session) GetAccessToken(ctx context.Context, userID int64, tokenID stri
 }
 
 // CreateAccessToken creates a new access token for a user in the Canvus API.
-func (s *Session) CreateAccessToken(ctx context.Context, userID int64, req CreateAccessTokenRequest) (*AccessToken, error) {
+// req can be CreateAccessTokenRequest or map[string]interface{}
+func (s *Session) CreateAccessToken(ctx context.Context, userID int64, req interface{}) (*AccessToken, error) {
 	var token AccessToken
 	endpoint := fmt.Sprintf("users/%d/access-tokens", userID)
 	err := s.doRequest(ctx, "POST", endpoint, req, &token, nil, false)
@@ -54,14 +55,14 @@ func (s *Session) CreateAccessToken(ctx context.Context, userID int64, req Creat
 	return &token, nil
 }
 
-// UpdateAccessToken updates an access token description for a user in the Canvus API.
-func (s *Session) UpdateAccessToken(ctx context.Context, userID int64, tokenID string, description string) (*AccessToken, error) {
+// UpdateAccessToken updates an access token for a user in the Canvus API.
+// req can be map[string]interface{} with fields like "description"
+func (s *Session) UpdateAccessToken(ctx context.Context, userID int64, tokenID string, req interface{}) (*AccessToken, error) {
 	if tokenID == "" {
 		return nil, fmt.Errorf("UpdateAccessToken: tokenID is required")
 	}
 	var token AccessToken
 	endpoint := fmt.Sprintf("users/%d/access-tokens/%s", userID, tokenID)
-	req := map[string]interface{}{"description": description}
 	err := s.doRequest(ctx, "PATCH", endpoint, req, &token, nil, false)
 	if err != nil {
 		return nil, fmt.Errorf("UpdateAccessToken: %w", err)

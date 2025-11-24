@@ -40,7 +40,12 @@ func (s *Session) CreateImage(ctx context.Context, canvasID string, multipartBod
 }
 
 // UpdateImage updates an image by ID for a given canvas.
+//
+// API Limitation: Size changes via PATCH do not preserve aspect ratio. Content will
+// stretch/distort to match exact requested dimensions. See WarningImageAspectRatioNotPreserved.
+// Workaround: Calculate correct aspect-ratio-preserving dimensions before calling this method.
 func (s *Session) UpdateImage(ctx context.Context, canvasID, imageID string, req interface{}) (*Image, error) {
+	warnOnce(WarningImageAspectRatioNotPreserved)
 	var image Image
 	path := fmt.Sprintf("canvases/%s/images/%s", canvasID, imageID)
 	err := s.doRequest(ctx, "PATCH", path, req, &image, nil, false)

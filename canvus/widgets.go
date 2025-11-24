@@ -289,7 +289,7 @@ type WidgetMatch struct {
 // WidgetsLister defines the interface for listing canvases and widgets.
 type WidgetsLister interface {
 	ListCanvases(ctx context.Context, filter *Filter) ([]Canvas, error)
-	ListWidgets(ctx context.Context, canvasID string, filter *Filter) ([]Widget, error)
+	ListWidgets(ctx context.Context, canvasID string, filter *Filter, includeAnnotations ...bool) ([]Widget, error)
 }
 
 // FindWidgetsAcrossCanvases searches all canvases for widgets matching the given query.
@@ -388,29 +388,28 @@ func WidgetsContainId(ctx context.Context, s *Session, canvasID string, widgetID
 	return WidgetZone{CanvasID: canvasID, SharedCanvasID: sharedCanvasID, Container: srcWidget, Contents: contained}, nil
 }
 
-
 // MoveWidget moves a widget to another canvas.
 func (s *Session) MoveWidget(ctx context.Context, widgetID, targetCanvasID string) error {
-path := fmt.Sprintf("widgets/%s/move", widgetID)
-req := map[string]string{"canvas_id": targetCanvasID}
-return s.doRequest(ctx, "POST", path, req, nil, nil, false)
+	path := fmt.Sprintf("widgets/%s/move", widgetID)
+	req := map[string]string{"canvas_id": targetCanvasID}
+	return s.doRequest(ctx, "POST", path, req, nil, nil, false)
 }
 
 // CopyWidget copies a widget to another canvas.
 func (s *Session) CopyWidget(ctx context.Context, widgetID, targetCanvasID string) error {
-path := fmt.Sprintf("widgets/%s/copy", widgetID)
-req := map[string]string{"canvas_id": targetCanvasID}
-return s.doRequest(ctx, "POST", path, req, nil, nil, false)
+	path := fmt.Sprintf("widgets/%s/copy", widgetID)
+	req := map[string]string{"canvas_id": targetCanvasID}
+	return s.doRequest(ctx, "POST", path, req, nil, nil, false)
 }
 
 // PinWidget pins a widget.
 func (s *Session) PinWidget(ctx context.Context, widgetID string) error {
-path := fmt.Sprintf("widgets/%s/pin", widgetID)
-return s.doRequest(ctx, "POST", path, nil, nil, nil, false)
+	path := fmt.Sprintf("widgets/%s/pin", widgetID)
+	return s.doRequest(ctx, "POST", path, nil, nil, nil, false)
 }
 
 // UnpinWidget unpins a widget.
 func (s *Session) UnpinWidget(ctx context.Context, widgetID string) error {
-path := fmt.Sprintf("widgets/%s/unpin", widgetID)
-return s.doRequest(ctx, "POST", path, nil, nil, nil, false)
+	path := fmt.Sprintf("widgets/%s/unpin", widgetID)
+	return s.doRequest(ctx, "POST", path, nil, nil, nil, false)
 }

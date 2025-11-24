@@ -21,10 +21,10 @@ const (
 
 // BatchOperation represents a single operation in a batch
 type BatchOperation struct {
-	ID       string      // Unique ID for this operation
+	ID       string // Unique ID for this operation
 	Type     BatchOperationType
-	Resource interface{} // The resource being operated on (Canvas, Widget, etc.)
-	Target   interface{} // Target for move/copy operations (folder ID, canvas ID, etc.)
+	Resource interface{}            // The resource being operated on (Canvas, Widget, etc.)
+	Target   interface{}            // Target for move/copy operations (folder ID, canvas ID, etc.)
 	Metadata map[string]interface{} // Additional operation-specific data
 }
 
@@ -41,12 +41,12 @@ type BatchResult struct {
 
 // BatchConfig holds configuration for batch operations
 type BatchConfig struct {
-	MaxConcurrency    int           // Maximum number of concurrent operations
-	Timeout           time.Duration // Overall timeout for the batch
-	RetryAttempts     int           // Number of retry attempts for failed operations
-	RetryDelay        time.Duration // Delay between retry attempts
-	ContinueOnError   bool          // Continue processing if individual operations fail
-	ProgressCallback  func(completed, total int, results []*BatchResult) // Optional progress callback
+	MaxConcurrency   int                                                // Maximum number of concurrent operations
+	Timeout          time.Duration                                      // Overall timeout for the batch
+	RetryAttempts    int                                                // Number of retry attempts for failed operations
+	RetryDelay       time.Duration                                      // Delay between retry attempts
+	ContinueOnError  bool                                               // Continue processing if individual operations fail
+	ProgressCallback func(completed, total int, results []*BatchResult) // Optional progress callback
 }
 
 // DefaultBatchConfig returns sensible defaults for batch operations
@@ -353,12 +353,12 @@ func (bob *BatchOperationBuilder) Build() []*BatchOperation {
 
 // BatchSummary provides a summary of batch operation results
 type BatchSummary struct {
-	TotalOperations   int
-	Successful        int
-	Failed            int
-	TotalDuration     time.Duration
-	AverageDuration   time.Duration
-	FailedOperations  []*BatchResult
+	TotalOperations  int
+	Successful       int
+	Failed           int
+	TotalDuration    time.Duration
+	AverageDuration  time.Duration
+	FailedOperations []*BatchResult
 }
 
 // Summarize creates a summary of batch operation results

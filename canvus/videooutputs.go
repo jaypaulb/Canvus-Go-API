@@ -16,6 +16,16 @@ func (s *Session) ListVideoOutputs(ctx context.Context, clientID string) ([]Vide
 	return outputs, nil
 }
 
+// GetVideoOutput retrieves a single video output by ID for a specific client.
+func (s *Session) GetVideoOutput(ctx context.Context, clientID, outputID string) (*VideoOutput, error) {
+	var output VideoOutput
+	err := s.doRequest(ctx, "GET", fmt.Sprintf("clients/%s/video-outputs/%s", clientID, outputID), nil, &output, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("GetVideoOutput: %w", err)
+	}
+	return &output, nil
+}
+
 // SetVideoOutputSource sets the source or suspends a video output for a client device.
 func (s *Session) SetVideoOutputSource(ctx context.Context, clientID string, index int, req interface{}) error {
 	path := fmt.Sprintf("clients/%s/video-outputs/%d", clientID, index)

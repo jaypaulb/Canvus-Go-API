@@ -73,7 +73,8 @@ func (s *Session) GetFolder(ctx context.Context, id string) (*Folder, error) {
 }
 
 // CreateFolder creates a new folder.
-func (s *Session) CreateFolder(ctx context.Context, req CreateFolderRequest) (*Folder, error) {
+// req can be CreateFolderRequest or map[string]interface{}
+func (s *Session) CreateFolder(ctx context.Context, req interface{}) (*Folder, error) {
 	var folder Folder
 	err := s.doRequest(ctx, "POST", "canvas-folders", req, &folder, nil, false)
 	if err != nil {

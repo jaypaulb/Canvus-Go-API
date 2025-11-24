@@ -30,7 +30,8 @@ func (c *Session) GetCanvas(ctx context.Context, id string) (*Canvas, error) {
 }
 
 // CreateCanvas creates a new canvas in the Canvus API.
-func (c *Session) CreateCanvas(ctx context.Context, req CreateCanvasRequest) (*Canvas, error) {
+// req can be CreateCanvasRequest or map[string]interface{}
+func (c *Session) CreateCanvas(ctx context.Context, req interface{}) (*Canvas, error) {
 	var canvas Canvas
 	err := c.doRequest(ctx, "POST", "canvases", req, &canvas, nil, false)
 	if err != nil {
@@ -40,7 +41,8 @@ func (c *Session) CreateCanvas(ctx context.Context, req CreateCanvasRequest) (*C
 }
 
 // UpdateCanvas renames or changes the mode of a canvas by ID in the Canvus API.
-func (c *Session) UpdateCanvas(ctx context.Context, id string, req UpdateCanvasRequest) (*Canvas, error) {
+// req can be UpdateCanvasRequest or map[string]interface{}
+func (c *Session) UpdateCanvas(ctx context.Context, id string, req interface{}) (*Canvas, error) {
 	var canvas Canvas
 	path := fmt.Sprintf("canvases/%s", id)
 	err := c.doRequest(ctx, "PATCH", path, req, &canvas, nil, false)

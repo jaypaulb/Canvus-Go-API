@@ -71,7 +71,8 @@ func (s *Session) GetServerConfig(ctx context.Context) (*ServerConfig, error) {
 }
 
 // UpdateServerConfig updates the server configuration in the Canvus API.
-func (s *Session) UpdateServerConfig(ctx context.Context, req ServerConfig) (*ServerConfig, error) {
+// req can be ServerConfig or map[string]interface{}
+func (s *Session) UpdateServerConfig(ctx context.Context, req interface{}) (*ServerConfig, error) {
 	var config ServerConfig
 	err := s.doRequest(ctx, "PATCH", "server-config", req, &config, nil, false)
 	if err != nil {
@@ -83,4 +84,9 @@ func (s *Session) UpdateServerConfig(ctx context.Context, req ServerConfig) (*Se
 // SendTestEmail sends a test email to the current user via the Canvus API.
 func (s *Session) SendTestEmail(ctx context.Context) error {
 	return s.doRequest(ctx, "POST", "server-config/send-test-email", nil, nil, nil, false)
+}
+
+// ReloadCerts reloads the server's TLS certificates.
+func (s *Session) ReloadCerts(ctx context.Context) error {
+	return s.doRequest(ctx, "POST", "server-config/reload-certs", nil, nil, nil, false)
 }

@@ -68,7 +68,8 @@ func (c *Session) GetWorkspace(ctx context.Context, clientID string, selector Wo
 }
 
 // UpdateWorkspace updates workspace parameters.
-func (c *Session) UpdateWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector, req UpdateWorkspaceRequest) (*Workspace, error) {
+// req can be UpdateWorkspaceRequest or map[string]interface{}
+func (c *Session) UpdateWorkspace(ctx context.Context, clientID string, selector WorkspaceSelector, req interface{}) (*Workspace, error) {
 	idx, err := c.resolveWorkspaceIndex(ctx, clientID, selector)
 	if err != nil {
 		return nil, err

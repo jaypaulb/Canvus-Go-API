@@ -6,7 +6,11 @@ import (
 )
 
 // ListNotes retrieves all notes for a given canvas.
+//
+// API Limitation: The 'title' field is not exposed by the Canvus API.
+// Responses will not include title values. See WarningNoteTitleNotExposed.
 func (s *Session) ListNotes(ctx context.Context, canvasID string) ([]Note, error) {
+	warnOnce(WarningNoteTitleNotExposed)
 	var notes []Note
 	path := fmt.Sprintf("canvases/%s/notes", canvasID)
 	err := s.doRequest(ctx, "GET", path, nil, &notes, nil, false)
@@ -17,6 +21,9 @@ func (s *Session) ListNotes(ctx context.Context, canvasID string) ([]Note, error
 }
 
 // GetNote retrieves a note by ID for a given canvas.
+//
+// API Limitation: The 'title' field is not exposed by the Canvus API.
+// Responses will not include title values. See WarningNoteTitleNotExposed.
 func (s *Session) GetNote(ctx context.Context, canvasID, noteID string) (*Note, error) {
 	var note Note
 	path := fmt.Sprintf("canvases/%s/notes/%s", canvasID, noteID)
@@ -28,6 +35,9 @@ func (s *Session) GetNote(ctx context.Context, canvasID, noteID string) (*Note, 
 }
 
 // CreateNote creates a new note on a canvas.
+//
+// API Limitation: The 'title' field is not exposed by the Canvus API.
+// Any title value in the request will be ignored. See WarningNoteTitleNotExposed.
 func (s *Session) CreateNote(ctx context.Context, canvasID string, req interface{}) (*Note, error) {
 	var note Note
 	path := fmt.Sprintf("canvases/%s/notes", canvasID)
@@ -39,6 +49,9 @@ func (s *Session) CreateNote(ctx context.Context, canvasID string, req interface
 }
 
 // UpdateNote updates a note by ID for a given canvas.
+//
+// API Limitation: The 'title' field is not exposed by the Canvus API.
+// Any title value in the request will be ignored. See WarningNoteTitleNotExposed.
 func (s *Session) UpdateNote(ctx context.Context, canvasID, noteID string, req interface{}) (*Note, error) {
 	var note Note
 	path := fmt.Sprintf("canvases/%s/notes/%s", canvasID, noteID)

@@ -1,7 +1,7 @@
 # Canvus Go SDK
 
 [![Go Version](https://img.shields.io/badge/Go-1.16+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0%20%7C%20Commercial-blue.svg)](LICENSE)
 [![GoDoc](https://pkg.go.dev/badge/github.com/jaypaulb/Canvus-Go-API/canvus.svg)](https://pkg.go.dev/github.com/jaypaulb/Canvus-Go-API/canvus)
 [![Latest Release](https://img.shields.io/github/v/release/jaypaulb/Canvus-Go-API?include_prereleases)](https://github.com/jaypaulb/Canvus-Go-API/releases)
 [![Build Status](https://github.com/jaypaulb/Canvus-Go-API/actions/workflows/release.yml/badge.svg)](https://github.com/jaypaulb/Canvus-Go-API/actions)
@@ -14,7 +14,7 @@ The Canvus API is powerful but complex. The Canvus Go SDK eliminates boilerplate
 
 ## Features
 
-- **Complete API Coverage** - 109+ methods covering all Canvus endpoints
+- **Complete API Coverage** - 130+ methods covering all Canvus endpoints
 - **Strongly Typed** - Full Go structs for all requests and responses
 - **Production Ready** - Automatic retries, circuit breakers, context support
 - **Multiple Auth Flows** - API key, username/password, token refresh
@@ -70,16 +70,16 @@ For a complete walkthrough, see the [Getting Started Guide](docs/GETTING_STARTED
 
 ## API Coverage
 
-The SDK provides **109+ methods** organized into these categories:
+The SDK provides **130+ methods** organized into these categories:
 
 | Category | Description | Methods |
 |----------|-------------|---------|
-| **Users** | User CRUD, access tokens, group membership | 12 |
+| **Users** | User CRUD, access tokens, group membership | 24 |
 | **Canvases** | Canvas CRUD, permissions, backgrounds | 15 |
-| **Widgets** | All widget types (notes, images, PDFs, videos, etc.) | 40+ |
+| **Widgets** | All widget types (notes, images, PDFs, videos, etc.) | 42+ |
 | **Folders** | Folder organization and permissions | 10 |
-| **System** | Server config, license, audit logs | 6 |
-| **Clients** | Client devices and workspaces | 12 |
+| **System** | Server config, license, audit logs | 11 |
+| **Clients** | Client devices and workspaces | 14 |
 | **Batch** | Bulk operations with retry logic | 6 |
 | **Import/Export** | Widget and asset migration | 2 |
 
@@ -118,6 +118,22 @@ The [/examples](examples/) directory contains runnable examples for common tasks
 | Batch Ops | Concurrent with progress | Sequential only |
 | Testing | Mock-friendly interfaces | HTTP stubs required |
 
+## Known API Limitations
+
+The Canvus API has some known limitations that affect certain operations. The SDK will emit warnings when these operations are used. Warnings can be disabled by setting `CANVUS_SDK_DISABLE_WARNINGS=1` or calling `canvus.DisableAPIWarnings()`.
+
+| Issue | Affected Methods | Description |
+|-------|-----------------|-------------|
+| Note title not exposed | `ListNotes`, `GetNote`, `CreateNote`, `UpdateNote` | Note widget 'title' field cannot be read or updated via API |
+| VideoInput title not exposed | `ListVideoInputs`, `CreateVideoInput` | VideoInput widget 'title' field cannot be read or updated via API |
+| PDF size bug | `UpdatePDF` | Size changes update bounding box but PDF content stays at original size |
+| Image aspect ratio | `UpdateImage` | Size changes distort content instead of preserving aspect ratio |
+| Video aspect ratio | `UpdateVideo` | Size changes distort content instead of preserving aspect ratio |
+| IP Video not exposed | N/A | IP Video streams have no REST API endpoints |
+| RDP not exposed | N/A | RDP connections have no REST API endpoints |
+
+For full details, see `CANVUS_API_ISSUES_REPORT.md` in this repository.
+
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
@@ -138,7 +154,12 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) file.
+This SDK is dual-licensed:
+
+- **[Apache License 2.0](LICENSE)** - Free for open source and internal use
+- **[Commercial License](docs/COMMERCIAL_LICENSE.md)** - For proprietary software with support
+
+Choose the license that best fits your needs. See [LICENSE](LICENSE) for details.
 
 ## Related Projects
 
